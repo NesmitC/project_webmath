@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{{ super() }}
+
+    <h1>Задача:</h1>
+    <p>Постройте график первообразной для функции {{ f_expr }}.</p>
+    <p>Ответ: {{ F_expr }}</p>
+    <img src="data:image/png;base64,{{ graph }}" alt="График первообразной">
+
+{% endblock %}
+
