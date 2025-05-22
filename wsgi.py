@@ -3,6 +3,41 @@ from calculus import generate_random_function, plot_function, calculate_derivati
 from sympy import symbols, sympify, lambdify, diff
 import os
 from dotenv import load_dotenv
+from neuroassist.assistant import CompanyAssistant
+
+app = Flask(__name__)
+assistant = CompanyAssistant()
+
+# Обработчик POST-запросов
+@app.route('/assistant', methods=['POST'])
+def ask_assistant():
+    data = request.json
+    if not data:
+        return jsonify({"error": "Требуется JSON-данные"}), 400
+    
+    question = data.get('question', '')
+    if not question:
+        return jsonify({"error": "Вопрос обязателен"}), 400
+    
+    answer = assistant.find_answer(question)
+    return jsonify({"question": question, "answer": answer})
+
+# Добавляем GET-вариант для тестирования из браузера
+@app.route('/assistant', methods=['GET'])
+def ask_assistant_get():
+    question = request.args.get('q', '')
+    if not question:
+        return "Используйте параметр ?q=ваш_вопрос", 400
+    
+    answer = assistant.find_answer(question)
+    return f"""
+    <h1>Ответ ассистента</h1>
+    <p><b>Вопрос:</b> {question}</p>
+    <p><b>Ответ:</b> {answer}</p>
+    <a href="/">Новый вопрос</a>
+    """
+
+
 
 # Загружаем .env из instance/ или корня
 env_path = os.path.join(os.path.dirname(__file__), 'instance', '.env')
@@ -12,8 +47,6 @@ else:
     load_dotenv()  # Попробует загрузить из корня
 
 
-
-app = Flask(__name__)
 
 @app.route('/')
 def index():

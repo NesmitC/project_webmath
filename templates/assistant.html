@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{{ super() }}
+
+<head>
+    <title>Ассистент компании</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea { width: 100%; height: 100px; }
+        button { margin-top: 10px; padding: 10px 15px; }
+    </style>
+</head>
+<body>
+    <h1>Задайте вопрос ассистенту</h1>
+    <form id="askForm">
+        <textarea name="question" placeholder="Ваш вопрос..."></textarea>
+        <button type="submit">Отправить</button>
+    </form>
+    <div id="response"></div>
+
+    <script>
+        document.getElementById('askForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = e.target.question.value;
+            
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                
+                const data = await response.json();
+                document.getElementById('response').innerHTML = `
+                    <h2>Ответ:</h2>
+                    <p>${data.answer}</p>
+                `;
+            } catch (error) {
+                document.getElementById('response').innerHTML = `
+                    <p style="color:red">Ошибка: ${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+
+{% endblock %}
+
