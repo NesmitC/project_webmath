@@ -1,6 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 from calculus import generate_random_function, plot_function, calculate_derivative
 from sympy import symbols, sympify, lambdify, diff
+import os
+from dotenv import load_dotenv
+
+# Загружаем .env из instance/ или корня
+env_path = os.path.join(os.path.dirname(__file__), 'instance', '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+else:
+    load_dotenv()  # Попробует загрузить из корня
+
+
 
 app = Flask(__name__)
 

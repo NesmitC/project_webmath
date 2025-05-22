@@ -26,6 +26,8 @@ __pycache__/
 # Файлы окружения
 .env
 .env.local
+instance/.env
+backend/instance/.env
 
 # Временные файлы
 temp/
