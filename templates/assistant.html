@@ -25,7 +25,7 @@
             const question = e.target.question.value;
             
             try {
-                const response = await fetch('/ask', {
+                const response = await fetch('/assistant', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question })

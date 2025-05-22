@@ -5,22 +5,29 @@ import os
 from dotenv import load_dotenv
 from neuroassist.assistant import CompanyAssistant
 
+
+
 app = Flask(__name__)
 assistant = CompanyAssistant()
 
 # Обработчик POST-запросов
 @app.route('/assistant', methods=['POST'])
 def ask_assistant():
-    data = request.json
-    if not data:
-        return jsonify({"error": "Требуется JSON-данные"}), 400
+    try:
+        data = request.get_json()
+        if not data or 'question' not in data:
+            return jsonify({"error": "Требуется JSON с полем 'question'"}), 400
+            
+        answer = assistant.find_answer(data['question'])
+        return jsonify({
+            "question": data['question'],
+            "answer": answer,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        assistant.logger.error(f"API Error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
     
-    question = data.get('question', '')
-    if not question:
-        return jsonify({"error": "Вопрос обязателен"}), 400
-    
-    answer = assistant.find_answer(question)
-    return jsonify({"question": question, "answer": answer})
 
 # Добавляем GET-вариант для тестирования из браузера
 @app.route('/assistant', methods=['GET'])
