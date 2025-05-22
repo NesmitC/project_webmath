@@ -1,0 +1,32 @@
+# Виртуальное окружение Python
+.venv/
+venv/
+env/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Файлы IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Логи и настройки
+*.log
+*.pot
+*.sqlite
+
+# Статические файлы (если собираются через npm/webpack)
+/frontend/node_modules/
+/frontend/dist/
+
+# Файлы окружения
+.env
+.env.local
+
+# Временные файлы
+temp/
+tmp/
