@@ -1,5 +1,6 @@
-from flask import Flask, render_template
-from calculus import generate_random_function, plot_function
+from flask import Flask, render_template, request, jsonify
+from calculus import generate_random_function, plot_function, calculate_derivative
+from sympy import symbols, sympify, lambdify, diff
 
 app = Flask(__name__)
 
@@ -8,14 +9,41 @@ def index():
     return "Hello, World!"
 
 
+
 @app.route('/task')
 def task():
     f_expr, F_expr = generate_random_function()
-    graph = plot_function(F_expr)  # Теперь передаём только выражение (без "F(x) =")
+    graph = plot_function(F_expr)
     return render_template('task.html', 
-                         f_expr=f_expr, 
-                         F_expr=f"F(x) = {F_expr} + C",  # Добавляем красивый формат
+                         f_expr=f_expr,
+                         F_expr=f"F(x) = {F_expr.replace('**', '^')} + C",
                          graph=graph)
+
+@app.route('/check_solution', methods=['GET', 'POST'])
+def check_solution():
+    if request.method == 'GET':
+        return jsonify({"message": "Используйте POST для проверки решения"})
+    
+    try:
+        data = request.get_json()
+        user_solution = data.get('solution', '')
+        
+        # В реальном приложении нужно хранить текущую задачу в сессии
+        _, correct_F = generate_random_function()
+        
+        # Простая проверка (можно улучшить)
+        is_correct = user_solution.replace(' ', '') == correct_F.replace('**', '^')
+        
+        return jsonify({
+            "correct": is_correct,
+            "expected": correct_F
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+
+
 
 if __name__ == '__main__':
     app.run(

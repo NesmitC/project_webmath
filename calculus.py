@@ -1,30 +1,55 @@
 import random
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Важно: используем неинтерактивный бэкенд
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
+from sympy import symbols, sympify, lambdify, sin, cos, exp, log, Abs, diff
+
+x = symbols('x')
 
 def generate_random_function():
     """Генерирует случайную f(x) и её первообразную F(x)."""
     functions = [
-        ("f(x) = 2x", "x**2"),  # Первообразная для 2x -> x^2
-        ("f(x) = 3x**2", "x**3"),  # Для 3x^2 -> x^3
-        ("f(x) = cos(x)", "sin(x)"),
-        ("f(x) = e^x", "e^x"),
+        ("2*x", "x**2"),
+        ("3*x**2", "x**3"),
+        ("cos(x)", "sin(x)"),
+        ("exp(x)", "exp(x)"),
+        ("1/x", "log(Abs(x))"),
+        ("sqrt(x)", "2/3*x**(3/2)"),
     ]
-    return random.choice(functions)
+    f_expr, F_expr = random.choice(functions)
+    return f"f(x) = {f_expr}", F_expr
 
 def plot_function(F_expr, x_range=(-3, 5)):
-    """Генерирует график F(x) и возвращает его в base64."""
-    x = np.linspace(x_range[0], x_range[1], 100)
-    y = eval(F_expr, {'x': x, 'sin': np.sin, 'cos': np.cos, 'e': np.e, 'exp': np.exp})
+    """Строит график и возвращает base64 изображение."""
+    try:
+        expr = sympify(F_expr)
+        func = lambdify(x, expr, modules=['numpy'])
+        
+        x_vals = np.linspace(*x_range, 500)
+        y_vals = func(x_vals)
+        
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(x_vals, y_vals)
+        ax.set_title(f"График первообразной")
+        ax.grid(True)
+        
+        buf = BytesIO()
+        fig.savefig(buf, format='png')
+        plt.close(fig)
+        return base64.b64encode(buf.getvalue()).decode('utf-8')
+    except Exception as e:
+        print(f"Ошибка построения графика: {e}")
+        return None
     
-    plt.figure()
-    plt.plot(x, y)
-    plt.title(f"График F(x) = {F_expr}")
-    plt.grid()
     
-    buffer = BytesIO()
-    plt.savefig(buffer, format='png')
-    buffer.seek(0)
-    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+def calculate_derivative(F_expr):
+    """Вычисляет производную от первообразной (т.е. исходную функцию f(x))"""
+    try:
+        expr = sympify(F_expr)
+        derivative = diff(expr, x)  # diff - функция символьного дифференцирования
+        return str(derivative).replace('**', '^')
+    except Exception as e:
+        return f"Ошибка вычисления производной: {e}"

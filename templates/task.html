@@ -3,10 +3,65 @@
 
 {{ super() }}
 
-    <h1>Задача:</h1>
-    <p>Постройте график первообразной для функции {{ f_expr }}.</p>
-    <p>Ответ: {{ F_expr }}</p>
-    <img src="data:image/png;base64,{{ graph }}" alt="График первообразной">
+
+<head>
+    <title>Первообразные функции</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Задача:</h1>
+        <p>Найдите первообразную для функции {{ f_expr }}.</p>
+        
+        <div class="graph-container">
+            {% if graph %}
+                <img src="data:image/png;base64,{{ graph }}" alt="График">
+            {% else %}
+                <p class="error">Ошибка построения графика</p>
+            {% endif %}
+        </div>
+        
+        <div class="solution-form">
+            <input type="text" id="user-solution" placeholder="x^2 + C">
+            <button onclick="checkSolution()">Проверить</button>
+            <button onclick="newTask()">Новая задача</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function checkSolution() {
+            const solution = document.getElementById('user-solution').value;
+            
+            fetch('/check_solution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ solution: solution })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.error) {
+                    resultDiv.innerHTML = `<p class="error">Ошибка: ${data.error}</p>`;
+                } else if (data.correct) {
+                    resultDiv.innerHTML = '<p class="success">Верно!</p>';
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">Неверно</p>
+                        <p>Ожидалось: F(x) = ${data.expected.replace('**', '^')} + C</p>
+                    `;
+                }
+            });
+        }
+        
+        function newTask() {
+            window.location.reload();
+        }
+    </script>
+</body>
 
 {% endblock %}
 
