@@ -11,6 +11,16 @@ from neuroassist.assistant import CompanyAssistant
 app = Flask(__name__)
 assistant = CompanyAssistant()
 
+
+@app.route('/test')
+def test():
+    try:
+        answer = assistant.find_answer("Как интегрировать x^2?")
+        return f"<pre>{answer}</pre>"
+    except Exception as e:
+        return f"Ошибка: {str(e)}"
+
+
 @app.route('/assistant', methods=['POST'])
 def ask_assistant():
     try:

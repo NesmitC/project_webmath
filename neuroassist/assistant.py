@@ -2,53 +2,49 @@
 
 import os
 from huggingface_hub import InferenceClient
+from openai import OpenAI
 from dotenv import load_dotenv
 import logging
 
-# Логирование для отладки
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
 class CompanyAssistant:
     def __init__(self):
-        # Явно указываем путь к .env
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        env_path = os.path.join(project_root, 'instance', '.env')
+        project_root = os.path.abspath(os.path.dirname(__file__))
+        env_path = os.path.join(project_root, '..', 'instance', '.env')
 
         if os.path.exists(env_path):
             load_dotenv(dotenv_path=env_path)
         else:
             raise FileNotFoundError(f".env файл не найден по пути: {env_path}")
 
-        self.api_key = os.getenv("HUGGINGFACE_API_KEY")
-
+        self.api_key = os.getenv("DEEPSEEK_API_KEY")
         if not self.api_key:
-            raise ValueError("HUGGINGFACE_API_KEY не найден в .env")
+            raise ValueError("DEEPSEEK_API_KEY не найден в .env")
 
-        # Используем модель, которая точно доступна всем ↓
-        self.model_name = "HuggingFaceH4/zephyr-7b-beta"
-
-        # Добавляем таймаут
-        self.client = InferenceClient(api_key=self.api_key, timeout=10)
+        # Подключение к DeepSeek
+        self.client = OpenAI(
+            api_key=self.api_key,
+            base_url="https://api.deepseek.com "
+        )
 
     def find_answer(self, question):
-        """Запрашивает ответ у модели ИИ"""
+        """Запрашивает ответ у модели DeepSeek"""
         if not question or not isinstance(question, str):
             return "Пожалуйста, задайте ваш вопрос."
 
-        logger.debug(f"Отправка вопроса: {question[:50]}...")
-
         try:
-            response = self.client.chat_completion(
-                model=self.model_name,
-                messages=[{"role": "user", "content": question}],
-                max_tokens=200
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",  # можно попробовать deepseek-lite
+                messages=[
+                    {"role": "user", "content": question}
+                ],
+                max_tokens=300,
+                temperature=0.7
             )
-            answer = response.choices[0].message.content.strip()
-            logger.debug("Ответ получен")
-            return answer
+            return response.choices[0].message.content.strip()
 
         except Exception as e:
-            logger.error(f"Ошибка при обращении к модели: {str(e)}")
-            return f"Ошибка: {str(e)}"
+            print(f"[ERROR] Не удалось получить ответ: {e}")
+            return "Не удалось получить ответ от модели. Попробуйте позже."
