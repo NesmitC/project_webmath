@@ -18,15 +18,13 @@ def ask_assistant():
         if not data or 'question' not in data:
             return jsonify({"error": "Требуется JSON с полем 'question'"}), 400
 
-        answer = assistant.find_answer(data['question'])  # вызываем метод
+        answer = assistant.find_answer(data['question'])
         return jsonify({
             "question": data['question'],
-            "answer": answer,
-            "timestamp": datetime.now().isoformat()
+            "answer": answer
         })
     except Exception as e:
-        assistant.logger.error(f"API Error: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 

@@ -4,7 +4,8 @@
 {{ super() }}
 
 <head>
-    <link rel="stylesheet" href="/static/style_chat.css">    
+    <link rel="stylesheet" href="/static/style_chat.css">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>    
 </head>
 
 <body>
@@ -19,10 +20,12 @@
     </div>
 
 <!-- Форма ввода -->
-    <form id="chat-form">
-        <input type="text" id="question" placeholder="Ваш вопрос..." required>
-        <button type="submit">Отправить</button>
-    </form>
+<form id="chat-form">
+    <input type="text" id="question" placeholder="Ваш вопрос...">
+    <button type="submit">Отправить</button>
+</form>
+
+<div id="chat-box"></div>
 </body>
 
 

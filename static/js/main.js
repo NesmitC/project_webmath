@@ -1,3 +1,6 @@
+console.log("main.js загружен");
+
+
 function checkSolution() {
     const solution = document.getElementById('user-solution').value;
             
@@ -28,33 +31,34 @@ function newTask() {
     window.location.reload();
 }
 
-document.getElementById("chat-form").addEventListener("submit", function (e) {
+document.getElementById("chat-form").addEventListener("submit", async function (e) {
     e.preventDefault();
     const question = document.getElementById("question").value.trim();
+    const chatBox = document.getElementById("chat-box");
+
     if (!question) return;
 
-    const chatBox = document.getElementById("chat-box");
-    const userMsg = document.createElement("div");
-    userMsg.className = "message user";
-    userMsg.textContent = "Вы: " + question;
-    chatBox.appendChild(userMsg);
+    // Показываем вопрос пользователя
+    chatBox.innerHTML += `<div class="user"><b>Вы:</b> ${question}</div>`;
+    // Показываем "ждите..."
+    const loadingMsg = `<div class="bot"><b>🤖 Ассистент:</b> <i>Думаю...</i></div>`;
+    chatBox.innerHTML += loadingMsg;
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    fetch("/chat", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: "question=" + encodeURIComponent(question)
-    })
-    .then(response => response.json())
-    .then(data => {
-        const botMsg = document.createElement("div");
-        botMsg.className = "message bot";
-        botMsg.textContent = "🤖 Ассистент: " + data.answer;
-        chatBox.appendChild(botMsg);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
+    try {
+        const res = await fetch("/assistant", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question })
+        });
 
-    // Очистка поля ввода
-    document.getElementById("question").value = "";
+        const data = await res.json();
+
+        // Обновляем последнее сообщение
+        chatBox.innerHTML = chatBox.innerHTML.replace('Думаю...', data.answer);
+
+    } catch (error) {
+        chatBox.innerHTML = chatBox.innerHTML.replace('Думаю...', 'Ошибка подключения');
+        console.error("Fetch error:", error);
+    }
 });
