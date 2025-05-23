@@ -3,6 +3,7 @@ from calculus import generate_random_function, plot_function, calculate_derivati
 from sympy import symbols, sympify, lambdify, diff
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 from neuroassist.assistant import CompanyAssistant
 
 
@@ -10,15 +11,14 @@ from neuroassist.assistant import CompanyAssistant
 app = Flask(__name__)
 assistant = CompanyAssistant()
 
-# Обработчик POST-запросов
 @app.route('/assistant', methods=['POST'])
 def ask_assistant():
     try:
         data = request.get_json()
         if not data or 'question' not in data:
             return jsonify({"error": "Требуется JSON с полем 'question'"}), 400
-            
-        answer = assistant.find_answer(data['question'])
+
+        answer = assistant.find_answer(data['question'])  # вызываем метод
         return jsonify({
             "question": data['question'],
             "answer": answer,
@@ -27,22 +27,6 @@ def ask_assistant():
     except Exception as e:
         assistant.logger.error(f"API Error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
-    
-
-# Добавляем GET-вариант для тестирования из браузера
-@app.route('/assistant', methods=['GET'])
-def ask_assistant_get():
-    question = request.args.get('q', '')
-    if not question:
-        return "Используйте параметр ?q=ваш_вопрос", 400
-    
-    answer = assistant.find_answer(question)
-    return f"""
-    <h1>Ответ ассистента</h1>
-    <p><b>Вопрос:</b> {question}</p>
-    <p><b>Ответ:</b> {answer}</p>
-    <a href="/">Новый вопрос</a>
-    """
 
 
 
@@ -53,11 +37,39 @@ if os.path.exists(env_path):
 else:
     load_dotenv()  # Попробует загрузить из корня
 
+# ---------------- диалоговое онкно с нейроассистентом -----------------
+
+db_ru = os.path.join('data', 'rus.txt')
+
+
+def find_answer(question):
+    """Простой поиск по ключевым словам в файле"""
+    question = question.lower()
+    try:
+        with open(db_ru, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        # Пример простого поиска
+        paragraphs = text.split('\n\n')
+        for paragraph in paragraphs:
+            if any(word in paragraph.lower() for word in question.split()):
+                return paragraph.strip()
+
+        return "К сожалению, я не нашёл информации по вашему вопросу."
+    except Exception as e:
+        return f"Ошибка при чтении файла: {e}"
 
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return render_template('index.html')
+
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_input = request.form.get('question', '').strip()
+    answer = find_answer(user_input)
+    return {"answer": answer}
 
 
 

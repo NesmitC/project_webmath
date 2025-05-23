@@ -27,3 +27,34 @@ function checkSolution() {
 function newTask() {
     window.location.reload();
 }
+
+document.getElementById("chat-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const question = document.getElementById("question").value.trim();
+    if (!question) return;
+
+    const chatBox = document.getElementById("chat-box");
+    const userMsg = document.createElement("div");
+    userMsg.className = "message user";
+    userMsg.textContent = "Вы: " + question;
+    chatBox.appendChild(userMsg);
+
+    fetch("/chat", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "question=" + encodeURIComponent(question)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const botMsg = document.createElement("div");
+        botMsg.className = "message bot";
+        botMsg.textContent = "🤖 Ассистент: " + data.answer;
+        chatBox.appendChild(botMsg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Очистка поля ввода
+    document.getElementById("question").value = "";
+});
