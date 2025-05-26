@@ -4,8 +4,7 @@
 {{ super() }}
 
 <head>
-    <link rel="stylesheet" href="/static/style_chat.css">
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>    
+    <link rel="stylesheet" href="/static/style_chat.css">    
 </head>
 
 <body>
@@ -21,11 +20,17 @@
 
 <!-- Форма ввода -->
 <form id="chat-form">
-    <input type="text" id="question" placeholder="Ваш вопрос...">
+    <input type="text" id="question" placeholder="Ваш вопрос..." required>
     <button type="submit">Отправить</button>
 </form>
 
 <div id="chat-box"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<!-- templates/index.html -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js "></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify @2.3.3/dist/browser-purify.min.js"></script>
+
 </body>
 
 
