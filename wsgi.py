@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 from neuroassist.assistant import CompanyAssistant
 import requests
+from models import get_response
+
 
 
 
@@ -64,19 +66,21 @@ def test():
 
 
 @app.route('/assistant', methods=['POST'])
-def ask_assistant():
+def assistant():
+    data = request.get_json()
+    question = data.get("question", "")
+    
+    # Проверка на пустой вопрос
+    if not question.strip():
+        return jsonify({"answer": "Пожалуйста, введите вопрос."})
+    
+    # Получение ответа от нейроассистента
     try:
-        data = request.get_json()
-        if not data or 'question' not in data:
-            return jsonify({"error": "Требуется JSON с полем 'question'"}), 400
-
-        answer = assistant.find_answer(data['question'])
-        return jsonify({
-            "question": data['question'],
-            "answer": answer
-        })
+        answer = get_response(question)  # предполагается, что эта функция есть в models.py
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        answer = f"Произошла ошибка при обработке: {e}"
+
+    return jsonify({"answer": answer})
 
 
 
