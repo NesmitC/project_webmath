@@ -5,10 +5,52 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from neuroassist.assistant import CompanyAssistant
+import requests
 
 
 
 app = Flask(__name__)
+
+# Загрузка .env
+load_dotenv()
+
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"  # Актуальный URL
+
+headers = {
+    "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+    "Content-Type": "application/json"
+}
+
+def get_deepseek_response(question):
+    try:
+        payload = {
+            "model": "deepseek-chat",
+            "messages": [{"role": "user", "content": question}],
+            "temperature": 0.7
+        }
+        
+        response = requests.post(DEEPSEEK_API_URL, json=payload, headers=headers)
+        response.raise_for_status()  # Проверка на ошибки HTTP
+        
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        print(f"DeepSeek API Error: {str(e)}")
+        return "Извините, произошла ошибка при запросе к API"
+
+@app.route('/ask', methods=['POST'])
+def ask():
+    data = request.get_json()
+    question = data.get('question', '')
+    
+    if not question:
+        return jsonify({"error": "Question is required"}), 400
+    
+    answer = get_deepseek_response(question)
+    return jsonify({"question": question, "answer": answer})
+
+# ----------------------------------------------------------------------
+
 assistant = CompanyAssistant()
 
 
