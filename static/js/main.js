@@ -1,35 +1,46 @@
-console.log("main.js загружен");
-
-document.getElementById("chat-form").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const question = document.getElementById("question").value.trim();
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("chat-form");
     const chatBox = document.getElementById("chat-box");
 
-    if (!question) return;
+    if (!form || !chatBox) return;
 
-    // Отображаем вопрос пользователя
-    chatBox.innerHTML += `<div class="user"><b>Вы:</b> ${question}</div>`;
-    // Индикатор ожидания
-    chatBox.innerHTML += `<div class="bot"><b>🤖 Ассистент:</b> <i>Думаю...</i></div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const questionInput = document.getElementById("question");
+        const question = questionInput.value.trim();
 
-    try {
-        const res = await fetch("/assistant", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question })
-        });
+        if (!question) return;
 
-        const data = await res.json();
+        // Показываем вопрос пользователя
+        chatBox.innerHTML += `<div class="message user"><b>Вы:</b> ${question}</div>`;
+        // Индикатор ожидания
+        chatBox.innerHTML += `<div class="message bot"><b>🤖 Ассистент:</b> <i>Думаю...</i></div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
 
-        // Обновляем последнее сообщение
-        chatBox.innerHTML = chatBox.innerHTML.replace('Думаю...', data.answer);
+        try {
+            const res = await fetch("/assistant", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question })
+            });
 
-    } catch (error) {
-        chatBox.innerHTML = chatBox.innerHTML.replace('Думаю...', 'Ошибка подключения');
-        console.error("Fetch error:", error);
-    }
+            const data = await res.json();
+
+            // Обновляем последнее сообщение
+            const botMessages = chatBox.getElementsByClassName("bot");
+            const lastMessage = botMessages[botMessages.length - 1];
+            if (lastMessage) {
+                lastMessage.innerHTML = `<b>🤖 Ассистент:</b> ${data.answer}`;
+            }
+
+        } catch (error) {
+            const botMessages = chatBox.getElementsByClassName("bot");
+            const lastMessage = botMessages[botMessages.length - 1];
+            if (lastMessage) {
+                lastMessage.innerHTML = `<b>🤖 Ассистент:</b> Ошибка подключения`;
+            }
+        }
+
+        questionInput.value = "";
+    });
 });
-
-const answerHTML = DOMPurify.sanitize(marked.parse(data.answer));
-chatBox.innerHTML = chatBox.innerHTML.replace('Думаю...', answerHTML);

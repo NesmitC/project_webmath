@@ -55,16 +55,25 @@ class CompanyAssistant:
 
     def ask_model(self, question):
         """Запрашивает ответ у модели DeepSeek"""
+
+        messages = [
+            {"role": "system", "content": "Вы — преподаватель математики и русского языка ЕГЭ. Будьте приветливы"
+                                        "Отвечайте чётко, по делу, без лишних примеров. "
+                                        "Если вопрос не связан с ЕГЭ — скажите, что вы специализируетесь только на ЕГЭ"},
+            {"role": "user", "content": question}
+        ]
+
         try:
             response = self.client.chat.completions.create(
                 model="deepseek-chat",
-                messages=[{"role": "user", "content": question}],
+                messages=messages,
                 max_tokens=300,
-                temperature=0.7
+                temperature=0.2
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
             return f"Ошибка: {str(e)}"
+
 
     def find_answer(self, question):
         """Основной метод: сначала ищем локально, потом обращаемся к модели"""

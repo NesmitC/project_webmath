@@ -1,39 +1,15 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
 
-{{ super() }}
+<h1>На этой странице можно задать вопрос по заданиям 12, 13</h1>
 
-<head>
-    <link rel="stylesheet" href="/static/style_chat.css">    
-</head>
+<h2>🤖 Нейроассистент</h2>
 
-<body>
-    <h1>На этой странице можно задать вопрос по заданиям 12, 13</h1>
-
-    <title>Чат с нейроассистентом</title>
-
-    <h2>🤖 Нейроассистент</h2>
-<!-- Диалоговое окно -->
-    <div id="chat-box">
-        <p><em>Задайте свой вопрос...</em></p>
-    </div>
-
-<!-- Форма ввода -->
-<form id="chat-form">
-    <input type="text" id="question" placeholder="Ваш вопрос..." required>
+<form id="askForm">
+    <textarea name="question" placeholder="Ваш вопрос..."></textarea>
     <button type="submit">Отправить</button>
 </form>
 
-<div id="chat-box"></div>
-
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<!-- templates/index.html -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js "></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify @2.3.3/dist/browser-purify.min.js"></script>
-
-</body>
-
-
-
+<div id="response"></div>
 
 {% endblock %}

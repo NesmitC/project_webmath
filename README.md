@@ -53,5 +53,6 @@ bash
 git push origin main  # или другая ветка
 
 .venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 
 '''

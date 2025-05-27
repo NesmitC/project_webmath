@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from neuroassist.assistant import CompanyAssistant
 import requests
-from models import get_response
+from models import get_response, clean_response
 
 
 
@@ -85,6 +85,7 @@ def assistant():
     return jsonify({"answer": answer})
 
 
+# ----------------------------------------------------------------
 
 # Загружаем .env из instance/ или корня
 env_path = os.path.join(os.path.dirname(__file__), 'instance', '.env')
