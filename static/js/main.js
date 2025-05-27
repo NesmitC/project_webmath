@@ -1,21 +1,22 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("chat-form");
-    const chatBox = document.getElementById("chat-box");
+    const form = document.getElementById("askForm");
+    const responseBox = document.getElementById("response");
 
-    if (!form || !chatBox) return;
+    if (!form || !responseBox) {
+        console.error("Элементы формы/ответа не найдены");
+        return;
+    }
 
-    form.addEventListener("submit", async function (e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const questionInput = document.getElementById("question");
-        const question = questionInput.value.trim();
+        const questionInput = form.querySelector("textarea[name='question']");
+        const question = questionInput?.value.trim();
 
         if (!question) return;
 
-        // Показываем вопрос пользователя
-        chatBox.innerHTML += `<div class="message user"><b>Вы:</b> ${question}</div>`;
-        // Индикатор ожидания
-        chatBox.innerHTML += `<div class="message bot"><b>🤖 Ассистент:</b> <i>Думаю...</i></div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        responseBox.innerHTML += `<p class="message user"><b>Вы:</b> ${question}</p>`;
+        const loadingMsg = `<p class="message bot" id="assistant-response"><b>🤖:</b> <i>Думаю...</i></p>`;
+        responseBox.innerHTML += loadingMsg;
 
         try {
             const res = await fetch("/assistant", {
@@ -26,21 +27,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const data = await res.json();
 
-            // Обновляем последнее сообщение
-            const botMessages = chatBox.getElementsByClassName("bot");
-            const lastMessage = botMessages[botMessages.length - 1];
-            if (lastMessage) {
-                lastMessage.innerHTML = `<b>🤖 Ассистент:</b> ${data.answer}`;
+            // Обновляем только последнее сообщение
+            const assistantDiv = document.getElementById("assistant-response");
+            if (assistantDiv) {
+                assistantDiv.outerHTML = `<p><b>🤖 Ассистент:</b> ${data.answer}</p>`;
             }
 
         } catch (error) {
-            const botMessages = chatBox.getElementsByClassName("bot");
-            const lastMessage = botMessages[botMessages.length - 1];
-            if (lastMessage) {
-                lastMessage.innerHTML = `<b>🤖 Ассистент:</b> Ошибка подключения`;
+            const assistantDiv = document.getElementById("assistant-response");
+            if (assistantDiv) {
+                assistantDiv.outerHTML = `<p style="color:red;"><b>Ошибка:</b> ${error.message}</p>`;
             }
         }
 
-        questionInput.value = "";
+        // Очистка поля ввода
+        if (questionInput) questionInput.value = "";
     });
 });

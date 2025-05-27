@@ -56,3 +56,21 @@ button {
     font-size: 16px;
     cursor: pointer;
 }
+
+.message {
+    margin: 10px 0;
+}
+
+.user {
+    text-align: right;
+    color: #007bff;
+}
+
+.bot {
+    text-align: left;
+    color: #28a745;
+}
+
+.bot.error {
+    color: red;
+}

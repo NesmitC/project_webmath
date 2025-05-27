@@ -43,15 +43,40 @@ class CompanyAssistant:
             with open(self.file_path, 'r', encoding='utf-8') as f:
                 text = f.read()
 
+            # Делим по заданиям
+            sections = text.split("# Конец ")
+            
+            for section in sections:
+                if "задание 13" in question.lower():
+                    if "егэ задание 13" in section or "# задание 13" in section.lower():
+                        print("[DEBUG] Используется контекст из Задания 13")
+                        return self.extract_content(section)
+
+                elif "задание 12" in question.lower():
+                    if "егэ задание 12" in section or "# задание 12" in section.lower():
+                        print("[DEBUG] Используется контекст из Задания 12")
+                        return self.extract_content(section)
+
+            print("[DEBUG] Контекст не найден → стандартный поиск")
             paragraphs = text.split('\n\n')
             for paragraph in paragraphs:
-                if any(word.lower() in paragraph.lower() for word in question.split()):
-                    return markdown_to_safe_html(paragraph.strip())
+                if any(word in paragraph.lower() for word in question.split()):
+                    return paragraph.strip()
 
             return None
+
         except Exception as e:
-            print(f"[ERROR] Ошибка чтения файла: {str(e)}")
+            print(f"[ERROR] Причина ошибки: {str(e)}")
             return None
+
+
+    def extract_content(self, section):
+        """Извлекает полезную часть раздела"""
+        lines = section.splitlines()
+        content_lines = [line for line in lines if not line.startswith('#') and line.strip()]
+        return "\n".join(content_lines).strip()
+
+
 
     def ask_model(self, question):
         """Запрашивает ответ у модели DeepSeek"""

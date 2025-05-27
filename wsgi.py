@@ -66,10 +66,11 @@ def test():
 
 
 @app.route('/assistant', methods=['POST'])
-def assistant():
+def ask_assistant():
     print("[LOG] Получен POST-запрос")
     data = request.get_json()
     print("[LOG] Полученные данные:", data)
+    answer = assistant.find_answer(data['question'])
     question = data.get("question", "")
     
     # Проверка на пустой вопрос
