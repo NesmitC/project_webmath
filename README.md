@@ -55,6 +55,8 @@ git push origin main  # или другая ветка
 .venv\Scripts\activate
 .\.venv\Scripts\Activate.ps1
 
+https://github.com/NesmitC/project_webmath.git
+
 Как закомментировать часть кода в VS Code:
 Выделите нужный фрагмент кода.
 Нажмите на клавиатуре: Ctrl + /
