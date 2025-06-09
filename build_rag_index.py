@@ -8,7 +8,7 @@ from pathlib import Path
 
 # Путь к базе знаний
 DATA_PATH = "data/rus/ege.txt"
-OUTPUT_DIR = Path("rag")
+OUTPUT_DIR = Path("rag")  # куда сохранять файлы
 MODEL_NAME = "distiluse-base-multilingual-cased-v2"
 
 # Создаем папку, если не существует
