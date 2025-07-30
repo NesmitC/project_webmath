@@ -1,9 +1,13 @@
 <!-- templates/index.html -->
+
 {% extends "base.html" %}
 
 {% block content %}
+{% include 'partials/navbar.html' %}
 {% include 'partials/hero.html' %}
 {% include 'partials/features.html' %}
-{% include 'partials/team.html' %}
+{% include 'partials/courses.html' %}
 {% include 'partials/chat.html' %}
+{% include 'partials/testimonials.html' %}
+{% include 'partials/footer.html' %}
 {% endblock %}

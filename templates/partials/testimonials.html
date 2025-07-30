@@ -1,0 +1,29 @@
+<!-- templates/partials/testimonials.html -->
+
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold">Отзывы учеников</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all">
+                <div class="flex items-center mb-4">
+                    <img class="w-12 h-12 rounded-full mr-4"
+                        src="{{ url_for('static', filename='images/avatar_student1.png') }}" alt="Ученик">
+                    <div>
+                        <h3 class="font-semibold">Анна, 11 класс</h3>
+                        <div class="flex text-yellow-400">
+                            <span class="material-symbols-outlined">star</span>
+                            <span class="material-symbols-outlined">star</span>
+                            <span class="material-symbols-outlined">star</span>
+                            <span class="material-symbols-outlined">star</span>
+                            <span class="material-symbols-outlined">star</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-600">"Сдала ЕГЭ по русскому на 94 балла! Нейроучитель объяснил всё понятно."</p>
+            </div>
+            <!-- Другие отзывы -->
+        </div>
+    </div>
+</section>
