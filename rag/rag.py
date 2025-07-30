@@ -4,6 +4,13 @@ import os
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
+from huggingface_hub import snapshot_download
+
+# Скачай модель заранее
+local_model_path = snapshot_download(repo_id="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
+# Используй локальную копию
+embeddings = HuggingFaceEmbeddings(model_name=local_model_path)
 
 
 class KnowledgeSearch:
@@ -13,7 +20,7 @@ class KnowledgeSearch:
         self.embeddings_path = embeddings_path or os.path.join(current_dir, "embeddings.npy")
         self.paragraphs_path = paragraphs_path or os.path.join(current_dir, "paragraphs.npy")
 
-        self.model = SentenceTransformer('distiluse-base-multilingual-cased-v2')
+        self.model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
         self.paragraphs = np.load(self.paragraphs_path, allow_pickle=True)
         self.index = faiss.read_index(self.index_path)
 

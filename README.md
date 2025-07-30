@@ -61,5 +61,53 @@ https://github.com/NesmitC/project_webmath.git
 Выделите нужный фрагмент кода.
 Нажмите на клавиатуре: Ctrl + /
 
+============================================================
+структура папок (рекомендуемая)
+
+project_webmath/
+├── app/                        # Основное приложение Flask (лучше чем корень)
+│   ├── __init__.py
+│   ├── routes.py               # Маршруты: /, /chat, /team
+│   ├── config.py               # Настройки приложения
+│   └── utils.py                # Вспомогательные функции
+│
+├── templates/
+│   ├── base.html               # Базовый шаблон с наследованием
+│   ├── partials/
+│   │   ├── header.html         # Шапка сайта
+│   │   ├── footer.html         # Подвал
+│   │   ├── navbar.html         # Навигация
+│   │   ├── hero.html           # Главный экран
+│   │   ├── team.html           # Команда нейросотрудников
+│   │   ├── features.html       # Преимущества
+│   │   └── chat.html           # Чат с нейроучителем
+│   └── index.html              # Главная страница (наследует base.html)
+│
+├── static/
+│   ├── css/
+│   │   └── style.css           # Кастомные стили
+│   ├── js/
+│   │   └── script.js           # Интерактивность (чат, кнопки)
+│   └── images/
+│       ├── logo.png
+│       ├── avatar_teacher.png
+│       └── bg-hero.jpg
+│
+├── neuroassist/
+│   └── assistant.py            # Логика нейроучителя
+│
+├── rag/
+│   └── rag.py                  # Поиск по базе знаний
+│
+├── instance/
+│   └── .env                    # Переменные окружения (не в Git)
+│
+├── requirements.txt
+├── wsgi.py                     # Точка входа (может остаться)
+└── .gitignore
+
+
+
+
 
 '''

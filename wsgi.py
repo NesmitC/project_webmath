@@ -129,10 +129,6 @@ def find_answer(question):
         return f"Ошибка при чтении файла: {e}"
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 
 @app.route('/chat', methods=['POST'])
 def chat():
