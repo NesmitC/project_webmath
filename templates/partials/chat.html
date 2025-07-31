@@ -2,20 +2,22 @@
 
 <section id="chat" class="py-16 bg-white">
     <div class="container mx-auto px-4">
-        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-xl p-6">
-            <h2 class="text-2xl font-bold mb-4 text-center">Чат с нейроучителем</h2>
-            <div class="h-80 overflow-y-auto border-b p-4 mb-4 space-y-3">
-                <div class="flex justify-start">
-                    <div class="bg-gray-100 rounded-lg p-3 max-w-xs">
-                        <strong>Нейроучитель:</strong> Здравствуйте! Чем могу помочь?
-                    </div>
+        <h2 class="text-2xl font-bold mb-6 text-center">Чат с нейроучителем</h2>
+        <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg border">
+            <div class="chat-box p-4 h-96 overflow-y-auto space-y-3">
+                <!-- Сообщения будут добавляться здесь -->
+                <div class="message bg-gray-100 p-3 rounded-lg max-w-xs ml-2 mr-auto">
+                    <strong>Нейроучитель:</strong> Здравствуйте! Я — ваш нейроучитель русского языка. Задайте вопрос.
                 </div>
-                <!-- Сообщения будут добавляться сюда -->
             </div>
-            <div class="flex gap-2">
-                <input type="text" placeholder="Введите вопрос..."
-                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">Отправить</button>
+            <div class="p-4 border-t flex gap-2">
+                <input type="text" id="user-input"
+                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Введите вопрос..." autocomplete="off">
+                <button id="send-btn"
+                    class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+                    Отправить
+                </button>
             </div>
         </div>
     </div>
