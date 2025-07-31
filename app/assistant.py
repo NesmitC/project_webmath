@@ -1,14 +1,42 @@
 # app/assistant.py
+
 import os
 import re
 import requests
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
 
-# === ЗАГРУЗКА ТЕКСТА ИЗ GOOGLE DOCS ===
+# --- Глобальные переменные ---
+_embeddings = None
+_db = None
+_retriever = None
+_hard_cases = {}
+_VECTOR_STORE_PATH = "faiss_index_webmath"
+
+# --- Загрузка сложных случаев ---
+CSV_URL = "https://docs.google.com/spreadsheets/d/1dQxvFLhajJOvdCM2rdqTMeJhy49cOVBQKfRH_3i0IRw/export?format=csv&gid=0"
+
+def load_hard_cases():
+    global _hard_cases
+    try:
+        df = pd.read_csv(CSV_URL)
+        print("✅ Таблица сложных случаев успешно загружена")
+        for _, row in df.iterrows():
+            triggers = str(row["trigger"]).lower().split("|")
+            for trigger in triggers:
+                trigger = trigger.strip()
+                if trigger:
+                    _hard_cases[trigger] = {
+                        "answer": row["answer"],
+                        "rule": row["rule"]
+                    }
+    except Exception as e:
+        print(f"❌ Ошибка загрузки CSV: {e}")
+
+# --- Загрузка текста из Google Docs ---
 def load_document_text(url: str) -> str:
     url = url.strip().split('/edit')[0]
     match_ = re.search(r'/document/d/([a-zA-Z0-9-_]+)', url)
@@ -20,53 +48,56 @@ def load_document_text(url: str) -> str:
     response.raise_for_status()
     return response.text
 
-# Загружаем базу знаний
-raw_data = load_document_text('https://docs.google.com/document/d/1CcW-xOVPIPUZaiMxJsl5SmCKyebfhIYwmkz1ONH_neI/edit?usp=sharing')
+# --- Инициализация базы знаний при первом запросе ---
+def get_retriever():
+    global _embeddings, _db, _retriever
+    if _retriever is not None:
+        return _retriever
 
-# === ДОБАВЛЯЕМ ЯСНОЕ ОПРЕДЕЛЕНИЕ ===
-definition = """
-## Что такое спряжение?
-Спряжение — это изменение глаголов по лицам и числам в изъявительном наклонении. В русском языке два спряжения: первое и второе.
-"""
-cleaned_data = definition + "\n\n" + raw_data
+    print("🔄 Загрузка модели эмбеддингов...")
 
-# === ЗАГРУЗКА СЛОЖНЫХ СЛУЧАЕВ ИЗ GOOGLE ТАБЛИЦЫ ===
-CSV_URL = "https://docs.google.com/spreadsheets/d/1dQxvFLhajJOvdCM2rdqTMeJhy49cOVBQKfRH_3i0IRw/export?format=csv&gid=0"
-hard_cases = {}
+    _embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
 
-try:
-    df = pd.read_csv(CSV_URL)
-    print("✅ Таблица сложных случаев успешно загружена")
-    for _, row in df.iterrows():
-        triggers = str(row["trigger"]).lower().split("|")
-        for trigger in triggers:
-            trigger = trigger.strip()
-            if trigger:
-                hard_cases[trigger] = {
-                    "answer": row["answer"],
-                    "rule": row["rule"]
-                }
-except Exception as e:
-    print(f"❌ Ошибка загрузки CSV: {e}")
+    if os.path.exists(_VECTOR_STORE_PATH):
+        print("📂 Загрузка сохранённого FAISS-индекса...")
+        _db = FAISS.load_local(
+            _VECTOR_STORE_PATH,
+            _embeddings,
+            allow_dangerous_deserialization=True
+        )
+    else:
+        print("🆕 Создание нового FAISS-индекса...")
 
-# === РАЗБИВКА ТЕКСТА ===
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=250, chunk_overlap=50)
-texts = text_splitter.split_text(cleaned_data)
-docs = [Document(page_content=txt) for txt in texts]
+        # Загружаем базу знаний
+        raw_data = load_document_text('https://docs.google.com/document/d/1CcW-xOVPIPUZaiMxJsl5SmCKyebfhIYwmkz1ONH_neI/edit?usp=sharing')
 
-# === ВЕКТОРНАЯ БАЗА ===
-embeddings = HuggingFaceEmbeddings(
-#    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # Очень качественная мультязычная модель, особенно на семантической близости. Хорошо понимает синонимы и перефразы на русском. Лучше работает с длинными фразами
-#    model_name="intfloat/multilingual-e5-large" # лучший выбор для RAG, отлично работает с многими языками, включая русский. Обучена на парах "вопрос–документ" Поддерживает до 512 токенов. Минус: тяжёлая (немного медленнее), но в Colab с GPU — нормально
-#    model_name="cointegrated/LaBSE-en-ru" # специализированная на английском и русском, Отлично работает, если в базе есть билингвальные фразы, Быстрая и точная. Хорошо понимает переводы и аналоги
-#    model_name="ai-forever/sbert_large_mt_nlu_ru" # от Сбер и DeepPavlov. Обучена только на русском языке, Создана специально для NLU (понимания естественного языка). Очень хороша в классификации и семантическом поиске. Подходит для образовательных задач
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
-db = FAISS.from_documents(docs, embeddings)
-retriever = db.as_retriever(k=1)
+        # Добавляем определение
+        definition = """
+        ## Что такое спряжение?
+        Спряжение — это изменение глаголов по лицам и числам в изъявительном наклонении. В русском языке два спряжения: первое и второе.
+        """
+        cleaned_data = definition + "\n\n" + raw_data
 
-# === DEEPSEEK API ===
+        # Разбивка
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=250, chunk_overlap=50)
+        texts = text_splitter.split_text(cleaned_data)
+        docs = [Document(page_content=txt) for txt in texts]
+
+        # Создание базы
+        _db = FAISS.from_documents(docs, _embeddings)
+        _db.save_local(_VECTOR_STORE_PATH)
+
+    _retriever = _db.as_retriever(k=1)
+    print("✅ Модель и база знаний готовы.")
+    return _retriever
+
+# --- DeepSeek API ---
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+if not DEEPSEEK_API_KEY:
+    raise EnvironmentError("DEEPSEEK_API_KEY не установлена")
+
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 HEADERS = {
     "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
@@ -74,7 +105,6 @@ HEADERS = {
 }
 
 def deepseek_complete(prompt: str) -> str:
-    import requests
     payload = {
         "model": "deepseek-chat",
         "messages": [{"role": "user", "content": prompt}],
@@ -88,24 +118,26 @@ def deepseek_complete(prompt: str) -> str:
     except Exception as e:
         return f"Ошибка при обращении к DeepSeek: {str(e)}"
 
-# === ОСНОВНАЯ ФУНКЦИЯ ОТВЕТА ===
+# --- ОСНОВНАЯ ФУНКЦИЯ ---
 def ask_teacher(question: str):
-    question = question.strip().lower()
+    question = question.strip()
     if not question:
         return "Пожалуйста, задайте вопрос."
 
     # 1. Проверка сложных случаев
-    for trigger in hard_cases:
-        if trigger in question:
-            case = hard_cases[trigger]
+    q_lower = question.lower()
+    for trigger in _hard_cases:
+        if trigger in q_lower:
+            case = _hard_cases[trigger]
             answer = case["answer"]
             if case["rule"]:
                 answer += f" Правило: {case['rule']}"
             return answer
 
     # 2. Поиск в базе знаний
+    retriever = get_retriever()
     relevant_docs = retriever.get_relevant_documents(question)
-    context = "\n".join([doc.page_content for doc in relevant_docs])
+    context = "\n\n".join([doc.page_content for doc in relevant_docs])
 
     prompt = f"""
 Ты — нейросотрудник-учитель русского языка. Отвечай кратко, точно и только по фактам из контекста.
@@ -127,3 +159,6 @@ def ask_teacher(question: str):
 """
 
     return deepseek_complete(prompt)
+
+# --- Загрузка данных при импорте ---
+load_hard_cases()

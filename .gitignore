@@ -29,6 +29,8 @@ __pycache__/
 instance/.env
 backend/instance/.env
 
+models/
+
 # Временные файлы
 temp/
 tmp/
