@@ -23,8 +23,6 @@ import requests
 
 
 # 3. Создаём приложение
-app = Flask(__name__)
-
 app = create_app()
 
 # 4. Остальные импорты (если нужно)
