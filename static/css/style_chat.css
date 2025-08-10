@@ -5,7 +5,7 @@ body {
     padding: 20px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
@@ -73,4 +73,66 @@ button {
 
 .bot.error {
     color: red;
+}
+
+
+/* static/css/style.css */
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    max-width: 80%;
+}
+
+.chat-message.teacher {
+    align-self: flex-start;
+}
+
+.chat-message.methodist {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.chat-message .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0 10px;
+    object-fit: cover;
+}
+
+.chat-message .text {
+    background: #f0f8ff;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.chat-message.methodist .text {
+    background: #e6ffe6;
+}
+
+.chat-message .text::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+}
+
+.chat-message.teacher .text::before {
+    border-top-color: #f0f8ff;
+    border-left-color: #f0f8ff;
+    bottom: -10px;
+    left: 10px;
+}
+
+.chat-message.methodist .text::before {
+    border-top-color: #e6ffe6;
+    border-right-color: #e6ffe6;
+    bottom: -10px;
+    right: 10px;
 }

@@ -18,6 +18,7 @@ print(f"✅ .env успешно загружен из: {dotenv_path}")
 # 2. Теперь можно импортировать модули, которые используют переменные окружения
 from flask import Flask, render_template, request, jsonify
 from app.assistant import ask_teacher
+from app.neuro_method import ask_methodist
 from app import create_app
 import requests
 
