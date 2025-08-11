@@ -1,0 +1,58 @@
+<!-- templates/admin/edit_question.html -->
+{% extends "base.html" %}
+
+{% block title %}Редактировать вопрос | Админка{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">✏️ Редактировать вопрос №{{ question.question_number }}</h1>
+
+<form method="POST" class="space-y-4">
+    <div>
+        <label class="block font-medium">Номер вопроса</label>
+        <input type="number" name="question_number" value="{{ question.question_number }}" required
+            class="border p-2 w-full rounded">
+    </div>
+
+    <div>
+        <label class="block font-medium">Тип вопроса</label>
+        <select name="question_type" required class="border p-2 w-full rounded">
+            <option value="input" {% if question.question_type=='input' %}selected{% endif %}>Ответ текстом</option>
+            <option value="checkbox" {% if question.question_type=='checkbox' %}selected{% endif %}>Выбор нескольких
+            </option>
+            <option value="match" {% if question.question_type=='match' %}selected{% endif %}>Установить соответствие
+            </option>
+            <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>Сочинение</option>
+        </select>
+    </div>
+
+    <div>
+        <label class="block font-medium">Текст вопроса</label>
+        <textarea name="question_text" required rows="3"
+            class="border p-2 w-full rounded">{{ question.question_text }}</textarea>
+    </div>
+
+    <div>
+        <label class="block font-medium">Варианты (через |, для checkbox/match)</label>
+        <input type="text" name="options" value="{{ question.options }}" placeholder="опция1|опция2|..."
+            class="border p-2 w-full rounded">
+    </div>
+
+    <div>
+        <label class="block font-medium">Правильный ответ</label>
+        <input type="text" name="correct_answer" value="{{ question.correct_answer }}" required
+            class="border p-2 w-full rounded">
+        <p class="text-sm text-gray-500">Для checkbox: 0,1; для match: 1,3,5</p>
+    </div>
+
+    <div>
+        <label class="block font-medium">Доп. информация (для сочинений)</label>
+        <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded">
+    </div>
+
+    <div class="flex gap-4">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Сохранить</button>
+        <a href="{{ url_for('admin.view_test', test_type=question.test.type.name) }}"
+            class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Отмена</a>
+    </div>
+</form>
+{% endblock %}

@@ -29,7 +29,11 @@ __pycache__/
 instance/.env
 backend/instance/.env
 
-models/
+.models/
+.data
+data
+.datadase
+database
 
 # Временные файлы
 temp/

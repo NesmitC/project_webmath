@@ -1,13 +1,13 @@
 # app/__init__.py
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 import os
 
-# Создаём db экземпляр заранее
-db = SQLAlchemy()
+# Импортируем db и модели
+from .models import db
 
-# Импортируем blueprint
+# Импортируем Blueprint'ы
 from .routes import main
+from .admin import admin
 
 def create_app():
     # Определяем пути к папкам
@@ -18,17 +18,15 @@ def create_app():
                 template_folder=template_dir,
                 static_folder=static_dir)
 
-    # Настройка базы данных ДО init_app
+    # Настройка базы данных
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database/examenator.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Регистрация blueprint
+    # Регистрируем Blueprint'ы
     app.register_blueprint(main)
+    app.register_blueprint(admin)  # Регистрируем админку
 
-    # Инициализация db
+    # Инициализируем SQLAlchemy
     db.init_app(app)
 
     return app
-
-# Для удобного импорта: from app import db
-__all__ = ['create_app', 'db']

@@ -3,6 +3,7 @@
 from flask import Blueprint, render_template, jsonify, request
 from .assistant import ask_teacher
 from .neuro_method import ask_methodist  # ✅ Импорт методиста
+from app.models import TestType, Test, Question
 import os
 import json
 
@@ -46,20 +47,19 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'examenator_da
 
 @main.route('/examenator')
 def examenator():
-    # Получаем все тесты с типами и вопросами
     examenator_data = {}
     test_types = ['incoming', 'current', 'final']
 
     for t in test_types:
         type_obj = TestType.query.filter_by(name=t).first()
         if type_obj and type_obj.tests:
-            test = type_obj.tests[0]  # один тест на тип
+            test = type_obj.tests[0]
             examenator_data[t] = {
                 'title': test.title,
                 'text': test.test_text,
                 'questions': []
             }
-            for q in test.questions:
+            for q in test.questions:  # ✅ Теперь работает!
                 examenator_data[t]['questions'].append({
                     'id': q.question_number,
                     'type': q.question_type,

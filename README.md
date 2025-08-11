@@ -117,7 +117,11 @@ project_webmath/
 └── .gitignore
 
 
+АДМИНКА
 
+http://127.0.0.1:5005/admin
+http://127.0.0.1:5005/admin/test/incoming
+http://127.0.0.1:5005/admin/edit-test/incoming
 
 
 '''

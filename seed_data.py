@@ -1,11 +1,9 @@
 # seed_data.py
-from app import create_app
+from wsgi import app
 from app.models import db, TestType, Test, Question
 
-app = create_app()
-
 with app.app_context():
-    # Удаляем старые данные (опционально)
+    # Удаляем старые данные
     db.drop_all()
     db.create_all()
 
@@ -13,61 +11,45 @@ with app.app_context():
     incoming = TestType(name='incoming')
     current = TestType(name='current')
     final = TestType(name='final')
-
     db.session.add_all([incoming, current, final])
     db.session.commit()
 
-    # Добавим входящую диагностику
-    text_incoming = """Нам лишь кажется, что, когда с нами что-то случается, это уникальное явление, единственное в своём роде. На самом деле нет ни одной проблемы, которая уже не была бы отражена в мировой литературе: любовь, верность, ревность, измена, трусость, поиски смысла жизни… Всё это уже когда-то кем-то было пережито, передумано; найдены причины, ответы и советы и запечатлены на страницах художественной литературы. Дело за малым: бери и читай! И всё найдёшь в книге. Неслучайно Ф.М. Достоевский призывал: «Читайте! А остальное сделает жизнь».
+    # Текст для всех тестов (можно разный)
+    text_incoming = "Нам лишь кажется, что, когда с нами что-то случается, это уникальное явление..."
+    text_current = "В.И. Даль — выдающийся русский лексикограф, этнограф, писатель..."
+    text_final = "Трудности — это неотъемлемая часть жизни. Они могут сломить человека, но могут и раскрыть его лучшие качества..."
 
-Литература, открывая мир с помощью слова, творит чудо: удваивает, утраивает наш внутренний опыт, беспредельно расширяет взгляд на жизнь, на человека, делает тоньше наше восприятие. В детские годы мы читаем сказки и приключения, чтобы пережить азарт поиска, интриги. Но наступает час, когда мы испытываем потребность открыть книгу для того, чтобы с ее помощью углубиться в себя. Это час взросления: мы ищем в книге собеседника, который просветляет, облагораживает, учит. Л.Н. Толстой судил о достоинствах книги по тому, «сколько раз её можно перечитывать».
-
-Книги, которые мы любим, становятся частью нас. Они, как живые люди, сопровождают нас всю жизнь. Мы перечитываем их в разные периоды, и каждый раз они раскрываются по-новому. Чем старше мы становимся, тем больше замечаем в них глубины, тонкости, скрытые смыслы. Такие книги хочется держать под рукой, чтобы в минуту сомнения или грусти снова заглянуть в них. Когда закрываешь последнюю страницу, тут же опять открываешь первую, чтобы не расставаться с ними. Такие книги хочется иметь дома, при себе, всегда, каждый день, чтобы в минуту отчаяния, растерянности, грусти открыть их на любой странице и вновь почувствовать себя уютно, спокойно, уверенно."""
-
-    test_incoming = Test(
-        title="Входящая диагностика",
-        test_text=text_incoming,
-        type_id=incoming.id
-    )
+    # === Входящая диагностика ===
+    test_incoming = Test(title="Входящая диагностика", test_text=text_incoming, type_id=incoming.id)
     db.session.add(test_incoming)
     db.session.commit()
 
-    # Добавим вопросы
-    questions_incoming = [
-        Question(
-            test_id=test_incoming.id,
-            question_number=1,
-            question_type="input",
-            question_text="Самостоятельно подберите притяжательное местоимение, которое должно стоять на месте пропуска в первом (1) предложении текста.",
-            correct_answer="их"
-        ),
-        Question(
-            test_id=test_incoming.id,
-            question_number=2,
-            question_type="checkbox",
-            question_text="Укажите варианты ответов, в которых лексическое значение выделенного слова соответствует его значению в данном тексте.",
-            options="НАТУРА. Характер человека, темперамент.|ОТМЕЧАТЬ. Праздновать какое-нибудь событие (разг.).|ПРОСТОЙ. Не сложный, элементарный.|СПОСОБНОСТЬ. Умение делать что-либо.|ПОДДЕРЖИВАТЬ. Способствовать, помогать.",
-            correct_answer="0,1"
-        ),
-        Question(
-            test_id=test_incoming.id,
-            question_number=8,
-            question_type="match",
-            question_text="Установите соответствие между грамматическими ошибками и предложениями.",
-            options="А) нарушение в построении предложения с причастным оборотом|Б) ошибка в построении сложноподчинённого предложения|В) нарушение связи между подлежащим и сказуемым",
-            correct_answer="1,3,5"
-        ),
-        Question(
-            test_id=test_incoming.id,
-            question_number=27,
-            question_type="textarea",
-            question_text="Напишите сочинение-рассуждение по проблеме исходного текста «Как литература влияет на человека?»",
-            info="Объём — не менее 150 слов. Учитывается содержание, аргументация, речь.",
-            correct_answer="не оценивается"
-        )
-    ]
-
-    db.session.add_all(questions_incoming)
+    db.session.add_all([
+        Question(test_id=test_incoming.id, question_number=1, question_type="input", question_text="Подберите местоимение...", correct_answer="их"),
+        Question(test_id=test_incoming.id, question_number=2, question_type="checkbox", question_text="Укажите верные значения...", options="НАТУРА. Характер...|ОТМЕЧАТЬ. Праздновать...", correct_answer="0,1"),
+    ])
     db.session.commit()
 
-    print("✅ База данных заполнена тестовыми данными!")
+    # === Текущая диагностика ===
+    test_current = Test(title="Текущая диагностика", test_text=text_current, type_id=current.id)
+    db.session.add(test_current)
+    db.session.commit()
+
+    db.session.add_all([
+        Question(test_id=test_current.id, question_number=1, question_type="input", question_text="Укажите способ образования слова СОЗДАТЕЛЬ.", correct_answer="суффиксальный"),
+        Question(test_id=test_current.id, question_number=2, question_type="checkbox", question_text="Укажите верные значения слов.", options="ВОЗРАЗИТЬ. Заявить о несогласии.|ВОСТОРГ. Подъём чувств.", correct_answer="0,1"),
+    ])
+    db.session.commit()
+
+    # === Итоговая диагностика ===
+    test_final = Test(title="Итоговая диагностика", test_text=text_final, type_id=final.id)
+    db.session.add(test_final)
+    db.session.commit()
+
+    db.session.add_all([
+        Question(test_id=test_final.id, question_number=1, question_type="input", question_text="Подберите уступительный союз.", correct_answer="хотя"),
+        Question(test_id=test_final.id, question_number=27, question_type="textarea", question_text="Напишите сочинение-рассуждение: «Как трудности раскрывают характер человека?»", info="Объём — не менее 150 слов."),
+    ])
+    db.session.commit()
+
+    print("✅ Все три теста (входящая, текущая, итоговая) добавлены в базу!")

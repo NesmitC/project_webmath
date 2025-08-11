@@ -19,14 +19,14 @@ print(f"✅ .env успешно загружен из: {dotenv_path}")
 from app import create_app
 app = create_app()
 
+# Устанавливаем secret_key из .env
+app.secret_key = os.getenv('SECRET_KEY')
+
 # 3. Теперь можно импортировать модули, зависящие от app/db
 from flask import render_template, request, jsonify
 from app.assistant import ask_teacher
 from app.neuro_method import ask_methodist
 import requests
-
-# 4. Подключаем db (уже инициализировано в create_app)
-from app import db
 
 # Не нужно повторно настраивать SQLALCHEMY_DATABASE_URI — уже в create_app
 

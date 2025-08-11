@@ -1,7 +1,9 @@
 # app/models.py
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
+
 
 class TestType(db.Model):
     __tablename__ = 'test_types'
@@ -9,11 +11,8 @@ class TestType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
 
-    # Связь с тестами
-    tests = db.relationship('Test', backref='type', lazy=True)
-
-    def __repr__(self):
-        return f"<TestType {self.name}>"
+    # Связь: один тип → много тестов
+    tests = db.relationship('Test', backref='type', lazy=True, cascade="all, delete-orphan")
 
 
 class Test(db.Model):
@@ -24,11 +23,8 @@ class Test(db.Model):
     test_text = db.Column(db.Text, nullable=False)
     type_id = db.Column(db.Integer, db.ForeignKey('test_types.id'), nullable=False)
 
-    # Связь с вопросами
+    # Связь: один тест → много вопросов
     questions = db.relationship('Question', backref='test', lazy=True, cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return f"<Test {self.title}>"
 
 
 class Question(db.Model):
@@ -36,12 +32,18 @@ class Question(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     test_id = db.Column(db.Integer, db.ForeignKey('tests.id'), nullable=False)
-    question_number = db.Column(db.Integer, nullable=False)  # 1, 2, 3...27
-    question_type = db.Column(db.String(50), nullable=False)  # 'input', 'checkbox', 'match', 'textarea'
+    question_number = db.Column(db.Integer, nullable=False)
+    question_type = db.Column(db.String(50), nullable=False)
     question_text = db.Column(db.Text, nullable=False)
-    options = db.Column(db.Text)  # строки через "|", например: "опция1|опция2"
-    correct_answer = db.Column(db.Text)  # "их" или "0,1" или "1,3,5"
-    info = db.Column(db.Text)  # для сочинений
+    options = db.Column(db.Text)
+    correct_answer = db.Column(db.Text)
+    info = db.Column(db.Text)
 
-    def __repr__(self):
-        return f"<Question {self.question_number} for Test {self.test_id}>"
+
+# 📊 Сохранение результатов учеников
+class Result(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    test_type = db.Column(db.String(50))
+    score = db.Column(db.Integer)
+    total = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
