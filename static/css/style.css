@@ -8,3 +8,36 @@ body {
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     color: white;
 }
+
+
+/* Нейроэкзаменатор */
+.test-section {
+    margin-bottom: 40px;
+    padding: 20px;
+    background: #f9f9ff;
+    border-radius: 8px;
+}
+
+.question {
+    margin-bottom: 18px;
+    padding-left: 10px;
+    border-left: 3px solid #3498db;
+}
+
+.options {
+    margin-top: 8px;
+}
+
+.option {
+    display: block;
+    margin: 6px 0;
+}
+
+.result {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f4fc;
+    border-radius: 8px;
+    font-weight: bold;
+    display: none;
+}

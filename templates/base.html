@@ -6,19 +6,50 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Нейростат — Онлайн-школа с нейросотрудниками</title>
+    <title>{% block title %}Нейростат — Онлайн-школа с нейросотрудниками{% endblock %}</title>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Кастомные стили -->
+
+    <!-- Кастомные стили (если используются только utility-классы) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
     <!-- Иконки -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+    <!-- Блок для кастомных стилей или скриптов в детях -->
+    {% block head %}{% endblock %}
 </head>
 
-<body class="bg-gray-50">
-    {% block content %}{% endblock %}
-    <!-- Подключаем JS -->
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Навигация -->
+    <nav class="bg-white shadow-sm border-b fixed w-full top-0 z-50">
+        <div class="container mx-auto px-6 py-3 flex items-center justify-between">
+            <a href="{{ url_for('main.index') }}" class="text-xl font-bold text-blue-600">Нейростат</a>
+            <div class="space-x-6">
+                <a href="{{ url_for('main.index') }}" class="hover:text-blue-600 transition">Главная</a>
+                <a href="{{ url_for('main.about') }}" class="hover:text-blue-600 transition">О школе</a>
+                <a href="{{ url_for('main.examenator') }}" class="hover:text-blue-600 transition">Нейроэкзаменатор</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Контент -->
+    <main class="pt-16">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Подвал -->
+    <footer class="bg-gray-100 mt-12 py-8">
+        <div class="container mx-auto px-6 text-center text-gray-600">
+            &copy; 2025 Нейростат. Обучение с нейросетями будущего.
+        </div>
+    </footer>
+
+    <!-- Глобальные скрипты -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

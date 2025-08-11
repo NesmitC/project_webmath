@@ -15,28 +15,20 @@ if not os.path.exists(dotenv_path):
 load_dotenv(dotenv_path)
 print(f"✅ .env успешно загружен из: {dotenv_path}")
 
-# 2. Теперь можно импортировать модули, которые используют переменные окружения
-from flask import Flask, render_template, request, jsonify
-from app.assistant import ask_teacher
-from app.neuro_method import ask_methodist
+# 2. Создаём приложение ДО импортов
 from app import create_app
-import requests
-
-
-# 3. Создаём приложение
 app = create_app()
 
-# 4. Остальные импорты (если нужно)
-import re
-from calculus import generate_random_function, plot_function, calculate_derivative
-from sympy import symbols, sympify, lambdify, diff
-from datetime import datetime
+# 3. Теперь можно импортировать модули, зависящие от app/db
+from flask import render_template, request, jsonify
+from app.assistant import ask_teacher
+from app.neuro_method import ask_methodist
+import requests
 
+# 4. Подключаем db (уже инициализировано в create_app)
+from app import db
 
-
-def backend_factory():
-    return requests.Session()
-
+# Не нужно повторно настраивать SQLALCHEMY_DATABASE_URI — уже в create_app
 
 if __name__ == '__main__':
     app.run(
