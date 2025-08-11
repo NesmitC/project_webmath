@@ -1,40 +1,110 @@
+# ========================
 # Виртуальное окружение Python
+# ========================
 .venv/
 venv/
 env/
+ENV/
 
 # Кэш Python
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
 *$py.class
+*.pyc~
+*.py[co]
 
-# Файлы IDE
+# ========================
+# Файлы IDE и редакторов
+# ========================
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.swp
+.swo
 
-# Логи и настройки
+# PyCharm
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ========================
+# Логи, временные и системные файлы
+# ========================
 *.log
 *.pot
-*.sqlite
+*.sqlite3
+*.db3
+.DS_Store
+Thumbs.db
 
-# Статические файлы (если собираются через npm/webpack)
-/frontend/node_modules/
-/frontend/dist/
+# Временные папки
+temp/
+tmp/
+.cache/
 
-# Файлы окружения
+# ========================
+# Файлы окружения (секреты!)
+# ========================
 .env
 .env.local
+.env.dev
+.env.production
 instance/.env
 backend/instance/.env
 
-.models/
-.data
-data
-.datadase
-database
+# ========================
+# Статика и сборка (если есть)
+# ========================
+/frontend/node_modules/
+/frontend/dist/
+/static/css/*.css.map
+/static/js/*.js.map
 
-# Временные файлы
-temp/
-tmp/
+# ========================
+# Базы данных (кроме SQLite, если нужна)
+# ========================
+# ❗ ВАЖНО: удали эту строку, если БАЗА ДОЛЖНА быть в репозитории
+# database/examenator.db  ← ОСТАВЬ, ЕСЛИ НУЖНА
+# Но если база генерируется — игнорируй всю папку:
+/database/*.db
+/database/*.sqlite
+/database/*.db-journal
+
+# ========================
+# Дополнительные файлы Python
+# ========================
+# PyInstaller
+/dist/
+/build/
+*.spec
+
+# setuptools
+*.egg-info/
+.eggs/
+
+# pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ========================
+# Тесты
+# ========================
+.pytest_cache/
+.coverage
+htmlcov/
+.nyc_output
+
+# ========================
+# Ошибки в твоём списке
+# ========================
+# ❌ models/ — НЕ нужно игнорировать! Это твой код!
+# Удали эти строки:
+# .models/
+# .data
+# data
+# datadase
+# database
