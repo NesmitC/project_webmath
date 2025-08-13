@@ -84,6 +84,7 @@ def examenator():
                 'type': q.question_type,
                 'question': q.question_text,
                 'question_text': q.question_text,
+                'options': q.options.split('|') if q.options else [],
                 'correct_answer': q.correct_answer,
                 'info': q.info
             })

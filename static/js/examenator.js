@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const inputId = `${type}-q${q.id}`;
             const questionContainerId = `question-${q.id}`;
 
-            if (q.type === "input") {
+            if (q.type === "input" || q.type === "short-answer") {
                 questionHtml += `
           <div class="mb-6 p-4 border rounded bg-white">
             <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
@@ -134,18 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>`;
             }
 
-            else if (q.type === "short-answer") {
-                questionHtml += `
-        <div class="mb-6 p-4 border rounded bg-white">
-            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
-            <input 
-                type="text" 
-                id="${inputId}" 
-                class="border p-2 w-full rounded mt-2" 
-                placeholder="Введите ответ (например: их, 34)" />
-        </div>`;
-            }
-
             // Для обычных текстов
             else {
                 questionHtml += `
@@ -155,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // ✅ ОСНОВНАЯ ОШИБКА: ТЫ НЕ ВСТАВЛЯЛ questionHtml
         container.innerHTML = questionHtml;
 
         // Теперь рендерим сложные задания
@@ -188,14 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const inputId = `${type}-q${q.id}`;
                 total++;
 
-                if (q.type === "input") {
+                if (q.type === "input" || q.type === "short-answer") {
                     const val = document.getElementById(inputId)?.value.trim().toLowerCase() || '';
-                    const expected = q.correct_answer?.toLowerCase() || '';
-                    if (val === expected) correct++;
-                }
-
-                else if (q.type === "task7") {
-                    const val = document.getElementById(`input-${q.id}`)?.value.trim().toLowerCase() || '';
                     const expected = q.correct_answer?.toLowerCase() || '';
                     if (val === expected) correct++;
                 }
