@@ -14,7 +14,7 @@
         {% for type in test_types %}
         <div class="bg-gray-50 p-6 rounded-xl mb-10" id="{{type}}-container">
             <h2 class="text-2xl font-bold text-blue-700 mb-2">{{ examenatorData[type].title }}</h2>
-            <p class="text-sm text-gray-500 mb-4">{{ examenatorData[type].test }}</p>
+            <p class="text-sm text-gray-500 mb-4">Текст задания</p>
 
             <div class="bg-white p-4 rounded border mb-6 text-sm leading-relaxed whitespace-pre-wrap">
                 {{ examenatorData[type].text }}
@@ -39,130 +39,9 @@
 
 {% block scripts %}
 <script>
-    const examenatorData = {{ examenatorData | tojson }};
-    const testTypes = {{ test_types | tojson }};
-
-    function loadTest(type) {
-        const container = document.getElementById(`${type}-questions`);
-        const test = examenatorData[type];
-        if (!test) {
-            container.innerHTML = '<p class="text-red-500">Ошибка загрузки теста.</p>';
-            return;
-        }
-
-        let questionHtml = '';
-
-        test.questions.forEach(q => {
-            const inputId = `${type}-q${q.id}`;
-
-            if (q.type === "input") {
-                questionHtml += `
-          <div class="mb-6">
-            <label class="block font-medium mb-2">${q.id}. ${q.question}</label>
-            <input type="text" id="${inputId}" class="border p-2 w-full rounded" />
-          </div>`;
-            }
-
-            if (q.type === "checkbox") {
-                questionHtml += `
-          <div class="mb-6">
-            <p class="font-medium mb-2">${q.id}. ${q.question}</p>
-            ${q.options.map((opt, i) => `
-              <label class="block">
-                <input type="checkbox" value="${i}" name="${inputId}" class="mr-2">
-                ${opt}
-              </label>
-            `).join('')}
-          </div>`;
-            }
-
-            if (q.type === "match") {
-                questionHtml += `
-          <div class="mb-6">
-            <p class="font-medium mb-2">${q.id}. ${q.question}</p>
-            ${q.pairs.map((pair, i) => `
-              <div class="flex gap-2 items-center mb-2">
-                <span class="font-mono text-sm">${pair[0]}</span>
-                <select name="${inputId}-pair${i}" class="border p-1 text-sm">
-                  <option value="">—</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-              </div>
-            `).join('')}
-          </div>`;
-            }
-
-            if (q.type === "textarea") {
-                questionHtml += `
-          <div class="mb-6">
-            <p class="font-medium mb-2">${q.id}. ${q.question}</p>
-            <small class="text-gray-500 block mb-2">${q.info}</small>
-            <textarea id="${inputId}" rows="5" class="border p-2 w-full rounded"></textarea>
-          </div>`;
-            }
-        });
-
-        container.innerHTML = questionHtml;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        testTypes.forEach(loadTest);
-    });
-
-    function checkAllTests() {
-        let correct = 0;
-        let total = 0;
-
-        testTypes.forEach(type => {
-            const test = examenatorData[type];
-            if (!test) return;
-
-            test.questions.forEach(q => {
-                const inputId = `${type}-q${q.id}`;
-                total++;
-
-                if (q.type === "input") {
-                    const val = document.getElementById(inputId)?.value.trim().toLowerCase() || '';
-                    if (val === q.answer.toLowerCase()) correct++;
-                }
-
-                if (q.type === "checkbox") {
-                    const checked = Array.from(document.querySelectorAll(`input[name="${inputId}"]:checked`))
-                        .map(el => parseInt(el.value));
-                    const correctSet = new Set(q.correct);
-                    const userSet = new Set(checked);
-                    const isCorrect = q.correct.length === checked.length &&
-                        [...userSet].every(v => correctSet.has(v));
-                    if (isCorrect) correct++;
-                }
-
-                if (q.type === "match") {
-                    const userAnswers = q.pairs.map((_, i) =>
-                        document.querySelector(`[name="${inputId}-pair${i}"]`).value
-                    );
-                    const isCorrect = userAnswers.join(',') === q.answer.join(',');
-                    if (isCorrect) correct++;
-                }
-
-                if (q.type === "textarea") {
-                    const val = document.getElementById(inputId)?.value || '';
-                    const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
-                    if (wordCount >= 150) correct++; // по критериям ЕГЭ
-                }
-            });
-        });
-
-        document.getElementById('score').textContent = correct;
-        document.getElementById('max-score').textContent = total;
-        document.getElementById('result').classList.remove('hidden');
-
-        const levelText = correct / total > 0.8 ? "Высокий уровень" :
-            correct / total > 0.6 ? "Средний уровень" : "Начальный уровень";
-        document.getElementById('level').textContent = `Уровень: ${levelText}`;
-    }
+    // @ts-nocheck
+    window.examenatorData = {{ examenatorData | tojson }};
+    window.testTypes = {{ test_types | tojson }};
 </script>
+<script src="{{ url_for('static', filename='js/examenator.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет | Нейростат{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Личный кабинет, {{ user.username }}</h1>
+    <p class="text-gray-600">Email: {{ user.email or 'не указан' }}</p>
+    <p>
+        <strong>Email:</strong> {{ user.email }}
+        {% if user.confirmed %}
+        <span class="text-green-600">✅ Подтверждён</span>
+        {% else %}
+        <span class="text-orange-600">⚠️ Не подтверждён</span>
+        <a href="{{ url_for('main.resend_confirmation') }}" class="text-blue-600 ml-2">Отправить повторно</a>
+        {% endif %}
+    </p>
+    <p class="text-gray-600">Telegram: {{ user.telegram or 'не указан' }}</p>
+    <p class="text-gray-600">Зарегистрирован: {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">Ваши результаты</h2>
+    {% if results %}
+    <div class="space-y-4">
+        {% for r in results %}
+        <div class="bg-gray-50 p-4 rounded border">
+            <p><strong>Тест:</strong> {{ r.test_type | title }} диагностика</p>
+            <p><strong>Результат:</strong> {{ r.score }}/{{ r.total }} баллов</p>
+            <p class="text-sm text-gray-500">{{ r.timestamp.strftime('%d.%m.%Y %H:%M') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-500">Пока нет результатов тестов.</p>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{{ url_for('main.examenator') }}"
+            class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Пройти тест</a>
+        <a href="{{ url_for('main.logout') }}" class="ml-4 text-red-600 hover:underline">Выйти</a>
+    </div>
+</div>
+
+{% endblock %}

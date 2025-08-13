@@ -1,16 +1,32 @@
 # app/admin/routes.py
-from flask import render_template, request, redirect, url_for, flash
-from app.models import db, TestType, Test, Question
+from flask import render_template, request, redirect, url_for, flash, session
+from app.models import db, TestType, Test, Question, User
+from functools import wraps
 
 # Импортируем admin из текущего пакета
 from . import admin
 
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('main.login'))
+        user = User.query.get(session['user_id'])
+        if not user or not user.is_admin:
+            return "Доступ запрещён", 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @admin.route('/')
+@admin_required
 def index():
     types = TestType.query.all()
     return render_template('admin/index.html', types=types)
 
 @admin.route('/test/<test_type>')
+@admin_required
 def view_test(test_type):
     type_obj = TestType.query.filter_by(name=test_type).first_or_404()
     test = Test.query.filter_by(type_id=type_obj.id).first()
@@ -20,6 +36,7 @@ def view_test(test_type):
     return render_template('admin/view_test.html', test=test, type_obj=type_obj)
 
 @admin.route('/add-question/<test_type>', methods=['GET', 'POST'])
+@admin_required
 def add_question(test_type):
     type_obj = TestType.query.filter_by(name=test_type).first_or_404()
     test = Test.query.filter_by(type_id=type_obj.id).first()
@@ -43,11 +60,12 @@ def add_question(test_type):
         flash("✅ Вопрос добавлен!")
         return redirect(url_for('admin.view_test', test_type=test_type))
 
-    return render_template('admin/add_question.html', test_type=test_type)
+    return render_template('admin/add_question.html', test_type=test_type, test=test)
 
 
 # ✏️ Редактирование и удаление вопросов
 @admin.route('/edit-question/<int:question_id>', methods=['GET', 'POST'])
+@admin_required
 def edit_question(question_id):
     # Находим вопрос
     question = Question.query.get_or_404(question_id)
@@ -70,6 +88,7 @@ def edit_question(question_id):
 
 # ✏️ Редактирование текстов
 @admin.route('/edit-test/<test_type>', methods=['GET', 'POST'])
+@admin_required
 def edit_test(test_type):
     # Находим тип теста и сам тест
     type_obj = TestType.query.filter_by(name=test_type).first_or_404()
@@ -91,6 +110,7 @@ def edit_test(test_type):
 
 
 @admin.route('/delete-question/<int:question_id>', methods=['POST'])
+@admin_required
 def delete_question(question_id):
     question = Question.query.get_or_404(question_id)
     test_type = question.test.type.name  # Сохраняем тип теста для редиректа

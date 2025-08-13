@@ -30,7 +30,31 @@
             <div class="space-x-6">
                 <a href="{{ url_for('main.index') }}" class="hover:text-blue-600 transition">Главная</a>
                 <a href="{{ url_for('main.about') }}" class="hover:text-blue-600 transition">О школе</a>
-                <a href="{{ url_for('main.examenator') }}" class="hover:text-blue-600 transition">Нейроэкзаменатор</a>
+                <!-- Кнопки Вход / Регистрация - Выход / ЛК -->
+
+                {% if 'user_id' in session %}
+                <!-- Пользователь авторизован -->
+                <a href="{{ url_for('main.profile') }}"
+                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                    <span class="material-symbols-outlined mr-1">account_circle</span> ЛК {{ current_user.username
+                    }}
+                </a>
+                <a href="{{ url_for('main.logout') }}"
+                    class="inline-flex items-center px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition font-medium">
+                    <span class="material-symbols-outlined mr-1">logout</span> Выход
+                </a>
+                {% else %}
+                <!-- Гость -->
+                <a href="{{ url_for('main.login') }}"
+                    class="inline-flex items-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium">
+                    <span class="material-symbols-outlined mr-1">login</span> Вход
+                </a>
+                <a href="{{ url_for('main.register') }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                    <span class="material-symbols-outlined mr-1">person_add</span> Регистрация
+                </a>
+                {% endif %}
+
             </div>
         </div>
     </nav>

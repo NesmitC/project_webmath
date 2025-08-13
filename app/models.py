@@ -1,9 +1,7 @@
 # app/models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
-
-db = SQLAlchemy()
-
+from app import db
 
 class TestType(db.Model):
     __tablename__ = 'test_types'
@@ -40,10 +38,26 @@ class Question(db.Model):
     info = db.Column(db.Text)
 
 
-# 📊 Сохранение результатов учеников
-class Result(db.Model):
+# === НОВОЕ: Пользователь и результаты ===
+
+class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    test_type = db.Column(db.String(50))
-    score = db.Column(db.Integer)
-    total = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)  # Хэшированный
+    email = db.Column(db.String(150), unique=True, nullable=True)
+    telegram = db.Column(db.String(100), unique=True, nullable=True)
+    confirmed = db.Column(db.Boolean, default=False)  # ← новое поле
+    is_admin = db.Column(db.Boolean, default=False)  # ← новое поле
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    results = db.relationship('Result', backref='user', lazy=True, cascade="all, delete-orphan")
+
+
+class Result(db.Model):
+    __tablename__ = 'results'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    test_type = db.Column(db.String(50), nullable=False)  # 'incoming', 'current', 'final'
+    score = db.Column(db.Integer, nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

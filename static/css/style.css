@@ -41,3 +41,32 @@ body {
     font-weight: bold;
     display: none;
 }
+
+
+/* Универсальные стили для заданий */
+.task-list {
+    margin-left: 2.5rem;
+    text-indent: -1.5rem;
+    padding-left: 1.5rem;
+    font-family: 'Times New Roman', serif;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.highlighted-word {
+    background-color: #ffebee;
+    color: #c62828;
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.checkbox-options label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.match-options {
+    line-height: 1.8;
+}

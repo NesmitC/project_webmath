@@ -122,6 +122,7 @@ project_webmath/
 http://127.0.0.1:5005/admin
 http://127.0.0.1:5005/admin/test/incoming
 http://127.0.0.1:5005/admin/edit-test/incoming
+http://127.0.0.1:5005/admin/add-question/incoming  добавить вопрос
 
 
 '''

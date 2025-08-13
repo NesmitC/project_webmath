@@ -115,3 +115,7 @@ htmlcov/
 *.bin
 *.pt
 *.ckpt
+
+
+migrations/*.pyc
+migrations/__pycache__/
