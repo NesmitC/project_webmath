@@ -18,6 +18,7 @@
         <label class="block font-medium">Тип вопроса</label>
         <select name="question_type" required class="border p-2 w-full rounded">
             <option value="input">Ответ текстом</option>
+            <option value="short-answer">Краткий ответ (одно поле)</option>
             <option value="checkbox">Выбор нескольких</option>
             <option value="match">Установить соответствие</option>
             <option value="textarea">Сочинение</option>
@@ -29,10 +30,23 @@
         <textarea name="question_text" required rows="3" class="border p-2 w-full rounded"></textarea>
     </div>
 
-    <div>
+    <!-- Поле "Варианты" — показываем только для checkbox и match -->
+    <div id="options-field" class="mb-4 hidden">
         <label class="block font-medium">Варианты (через |, для checkbox/match)</label>
         <input type="text" name="options" placeholder="опция1|опция2|..." class="border p-2 w-full rounded">
     </div>
+
+    <script>
+        // Показываем поле "Варианты" только для нужных типов
+        document.getElementById('question-type').addEventListener('change', function () {
+            const optionsField = document.getElementById('options-field');
+            if (this.value === 'checkbox' || this.value === 'match') {
+                optionsField.classList.remove('hidden');
+            } else {
+                optionsField.classList.add('hidden');
+            }
+        });
+    </script>
 
     <div>
         <label class="block font-medium">Правильный ответ</label>

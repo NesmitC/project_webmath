@@ -80,14 +80,13 @@ def examenator():
             }
             for q in test.questions:
                 examenator_data[t]['questions'].append({
-                    'id': q.question_number,
-                    'type': q.question_type,
-                    'question': q.question_text,
-                    'question_text': q.question_text,  # ← Добавлено! Нужно для рендера
-                    'options': q.options.split('|') if q.options else None,
-                    'correct_answer': q.correct_answer,
-                    'info': q.info
-                })
+                'id': q.question_number,
+                'type': q.question_type,
+                'question': q.question_text,
+                'question_text': q.question_text,
+                'correct_answer': q.correct_answer,
+                'info': q.info
+            })
 
     return render_template('examenator.html', examenatorData=examenator_data, test_types=test_types)
 

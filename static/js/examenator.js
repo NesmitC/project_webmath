@@ -1,6 +1,6 @@
 // static/js/examenator.js
 
-// Универсальный рендер заданий
+// Универсальный рендер для сложных заданий (task7, match)
 class ExamRenderer {
     constructor(container, text, type = 'default') {
         this.container = container;
@@ -16,7 +16,6 @@ class ExamRenderer {
         return text.replace(/([А-ЯЁ]{2,}(?:\s+[А-ЯЁ]{2,})*)/g, '<span class="highlighted-word">$1</span>');
     }
 
-    // Рендер задания 7: список с красной строкой + одно текстовое поле
     renderTask7(inputId) {
         const lines = this.splitLines();
         let html = '<div class="task-list">';
@@ -25,39 +24,15 @@ class ExamRenderer {
             html += `<p>${highlighted}</p>`;
         });
         html += '</div>';
-
-        // Текстовое поле для ответа
-        html += `
-            <div class="mt-4">
-                <label class="block font-medium mb-2">Ответ:</label>
-                <input type="text" id="${inputId}" class="border p-2 w-full rounded" placeholder="Введите слово" />
-            </div>
-        `;
-
+        html += `<div class="mt-4"><label class="block font-medium mb-2">Ответ:</label><input type="text" id="${inputId}" class="border p-2 w-full rounded" placeholder="Введите слово" /></div>`;
         this.container.innerHTML = html;
     }
 
-    // Рендер выбор нескольких (через |)
-    renderCheckbox() {
-        const options = this.text.split('|');
-        let html = '<div class="checkbox-options">';
-        options.forEach((opt, i) => {
-            html += `
-                <label class="block mt-2">
-                    <input type="checkbox" value="${i}" name="${this.container.id}" class="mr-2">
-                    ${i + 1}) ${opt}
-                </label>`;
-        });
-        html += '</div>';
-        this.container.innerHTML = html;
-    }
-
-    // Рендер соответствия
     renderMatch() {
         const parts = this.text.split('|');
-        const labels = ['А', 'Б', 'В', 'Г', 'Д'];
+        const labels = ['А', 'Б', 'В'];
         let html = '<div class="match-options">';
-        for (let i = 0; i < Math.min(labels.length, parts.length); i++) {
+        for (let i = 0; i < labels.length; i++) {
             html += `
                 <div class="mb-3">
                     <span class="font-semibold">${labels[i]}</span>
@@ -80,9 +55,6 @@ class ExamRenderer {
             case 'task7':
                 this.renderTask7(inputId);
                 break;
-            case 'checkbox':
-                this.renderCheckbox();
-                break;
             case 'match':
                 this.renderMatch();
                 break;
@@ -100,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const { examenatorData, testTypes } = window;
-    console.log("✅ Данные загружены:", examenatorData);
 
     function loadTest(type) {
         const container = document.getElementById(`${type}-questions`);
@@ -114,34 +85,97 @@ document.addEventListener('DOMContentLoaded', () => {
         let questionHtml = '';
 
         test.questions.forEach(q => {
+            const inputId = `${type}-q${q.id}`;
             const questionContainerId = `question-${q.id}`;
-            const label = q.question || `Задание ${q.id}`;
 
-            questionHtml += `
-                <div class="mb-6 p-4 border rounded bg-white">
-                    <p class="font-semibold mb-3">${q.id}. ${label}</p>
-                    <div id="${questionContainerId}" class="question-container mt-2"></div>
-                </div>
-            `;
+            if (q.type === "input") {
+                questionHtml += `
+          <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+            <input type="text" id="${inputId}" class="border p-2 w-full rounded" placeholder="Введите ответ" />
+          </div>`;
+            }
+
+            else if (q.type === "checkbox") {
+                const options = Array.isArray(q.options) ? q.options :
+                    typeof q.options === 'string' ? q.options.split('|') :
+                        [];
+                let optionsHtml = '';
+                options.forEach((opt, i) => {
+                    optionsHtml += `
+            <label class="block mt-2">
+                <input type="checkbox" value="${i}" name="${inputId}" class="mr-2">
+                ${opt}
+            </label>`;
+                });
+
+                questionHtml += `
+          <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+            <div class="checkbox-options">${optionsHtml}</div>
+          </div>`;
+            }
+
+            else if (q.type === "textarea") {
+                questionHtml += `
+          <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+            <small class="text-gray-500 block mb-2">${q.info || 'Ответ должен быть не менее 150 слов.'}</small>
+            <textarea id="${inputId}" rows="5" class="border p-2 w-full rounded"></textarea>
+          </div>`;
+            }
+
+            // Для task7 и match — контейнер, рендерим отдельно
+            else if (['task7', 'match'].includes(q.type)) {
+                questionHtml += `
+          <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+            <div id="${questionContainerId}" class="question-container mt-2"></div>
+          </div>`;
+            }
+
+            else if (q.type === "short-answer") {
+                questionHtml += `
+        <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+            <input 
+                type="text" 
+                id="${inputId}" 
+                class="border p-2 w-full rounded mt-2" 
+                placeholder="Введите ответ (например: их, 34)" />
+        </div>`;
+            }
+
+            // Для обычных текстов
+            else {
+                questionHtml += `
+          <div class="mb-6 p-4 border rounded bg-white">
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
+          </div>`;
+            }
         });
 
         container.innerHTML = questionHtml;
 
-        // Рендерим каждый вопрос
+        // Теперь рендерим сложные задания
         test.questions.forEach(q => {
-            const containerEl = document.getElementById(`question-${q.id}`);
-            if (!containerEl) return;
-
-            new ExamRenderer(
-                containerEl,
-                q.question_text || q.question,
-                q.type
-            ).render();
+            if (['task7', 'match'].includes(q.type)) {
+                const containerEl = document.getElementById(`question-${q.id}`);
+                if (containerEl) {
+                    new ExamRenderer(
+                        containerEl,
+                        q.question_text || q.question,
+                        q.type
+                    ).render();
+                }
+            }
         });
     }
 
+    // Загружаем все тесты
     testTypes.forEach(loadTest);
 
+    // Функция проверки
     window.checkAllTests = function () {
         let correct = 0;
         let total = 0;
@@ -151,22 +185,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!test) return;
 
             test.questions.forEach(q => {
+                const inputId = `${type}-q${q.id}`;
                 total++;
 
-                if (q.type === "task7") {
-                    const val = document.getElementById(`input-${q.id}`)?.value.trim().toLowerCase() || '';
+                if (q.type === "input") {
+                    const val = document.getElementById(inputId)?.value.trim().toLowerCase() || '';
                     const expected = q.correct_answer?.toLowerCase() || '';
                     if (val === expected) correct++;
                 }
 
-                else if (q.type === "input") {
+                else if (q.type === "task7") {
                     const val = document.getElementById(`input-${q.id}`)?.value.trim().toLowerCase() || '';
                     const expected = q.correct_answer?.toLowerCase() || '';
                     if (val === expected) correct++;
                 }
 
                 else if (q.type === "checkbox") {
-                    const checked = Array.from(document.querySelectorAll(`input[name="question-${q.id}"]:checked`))
+                    const checked = Array.from(document.querySelectorAll(`input[name="${inputId}"]:checked`))
                         .map(el => parseInt(el.value));
                     const correctAnswers = q.correct_answer
                         ?.split(',')
@@ -188,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 else if (q.type === "textarea") {
-                    const val = document.getElementById(`input-${q.id}`)?.value || '';
+                    const val = document.getElementById(inputId)?.value || '';
                     const wordCount = val.trim().split(/\s+/).filter(w => w.length > 0).length;
                     if (wordCount >= 150) correct++;
                 }
@@ -207,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/submit-test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ test_type: type, score: correct, total: total })
+            body: JSON.stringify({ test_type: 'all', score: correct, total: total })
         }).catch(err => console.error("❌ Ошибка отправки:", err));
     };
 });
