@@ -27,35 +27,58 @@ def index():
     return render_template('admin/index.html', types=types)
 
 
+def get_test_by_type_name(test_type_name):
+    """Унифицированная функция для получения теста по имени типа"""
+    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
+    test = Test.query.filter_by(test_type_id=test_type.id).first()
+    return test, test_type
+
+
+@admin.route('/add-test/<test_type_name>', methods=['GET', 'POST'])
+@admin_required
+def add_test(test_type_name):
+    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
+    
+    if request.method == 'POST':
+        title = request.form['title']
+        test_text = request.form['test_text']
+        
+        # Проверим, нет ли уже теста
+        existing = Test.query.filter_by(test_type_id=test_type.id).first()
+        if existing:
+            flash("Тест для этого типа уже существует.")
+            return redirect(url_for('admin.index'))
+
+        test = Test(
+            title=title,
+            test_text=test_text,
+            test_type_id=test_type.id
+        )
+        db.session.add(test)
+        db.session.commit()
+        flash("✅ Тест создан")
+        return redirect(url_for('admin.index'))
+
+    return render_template('admin/add_test.html', test_type_name=test_type_name)
+
+
 @admin.route('/add-question/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_question(test_type_name):
-    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
-    
-    # ✅ Исправлено: используем filter_by(test_type_id=...)
-    test = Test.query.filter_by(test_type_id=test_type.id).first()
-    
+    test, test_type = get_test_by_type_name(test_type_name)
     if not test:
         flash("Сначала создайте тест для этого типа.")
         return redirect(url_for('admin.index'))
 
     if request.method == 'POST':
-        question_number = int(request.form['question_number'])
-        question_type = request.form['question_type']
-        task_text = request.form.get('task_text')  # может быть None
-        question_text = request.form['question_text']
-        options = request.form.get('options')
-        correct_answer = request.form['correct_answer']
-        info = request.form.get('info')
-
         question = Question(
-            question_number=question_number,
-            question_type=question_type,
-            task_text=task_text,
-            question_text=question_text,
-            options=options,
-            correct_answer=correct_answer,
-            info=info,
+            question_number=int(request.form['question_number']),
+            question_type=request.form['question_type'],
+            task_text=request.form.get('task_text'),
+            question_text=request.form['question_text'],
+            options=request.form.get('options'),
+            correct_answer=request.form['correct_answer'],
+            info=request.form.get('info'),
             test_id=test.id
         )
         db.session.add(question)
@@ -90,24 +113,16 @@ def edit_question(question_id):
 @admin.route('/edit-test/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def edit_test(test_type_name):
-    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
-    
-    # ✅ Исправлено: используем filter_by(test_type_id=...)
-    test = Test.query.filter_by(test_type_id=test_type.id).first()
-    
+    test, test_type = get_test_by_type_name(test_type_name)
     if not test:
-        flash("Тест ещё не создан. Сначала создайте тест.")
+        flash("Тест ещё не создан.")
         return redirect(url_for('admin.index'))
 
     if request.method == 'POST':
-        title = request.form['title']
-        test_text = request.form['test_text']
-        
-        test.title = title
-        test.test_text = test_text
+        test.title = request.form['title']
+        test.test_text = request.form['test_text']
         db.session.commit()
-        
-        flash("✅ Текст теста успешно обновлён")
+        flash("✅ Текст теста обновлён")
         return redirect(url_for('admin.index'))
 
     return render_template('admin/edit_test.html', test=test, test_type=test_type)
@@ -116,16 +131,8 @@ def edit_test(test_type_name):
 @admin.route('/view-test/<test_type_name>')
 @admin_required
 def view_test(test_type_name):
-    # Находим тип теста по имени
-    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
-    
-    # ✅ Правильно находим тест по test_type_id
-    test = Test.query.filter_by(test_type_id=test_type.id).first()
-    
-    # Если теста нет — показываем сообщение и возвращаемся
+    test, test_type = get_test_by_type_name(test_type_name)
     if not test:
         flash("Тест ещё не создан.")
         return redirect(url_for('admin.index'))
-    
-    # Передаём тест и тип теста в шаблон
     return render_template('admin/view_test.html', test=test, test_type=test_type)
