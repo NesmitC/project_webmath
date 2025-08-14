@@ -28,15 +28,16 @@ class ExamRenderer {
         this.container.innerHTML = html;
     }
 
-    renderMatch() {
+    renderMatch(questionId) {
         const parts = this.text.split('|');
         const labels = ['А', 'Б', 'В'];
         let html = '<div class="match-options">';
         for (let i = 0; i < labels.length; i++) {
+            const selectName = `${questionId}-pair${i}`;
             html += `
                 <div class="mb-3">
                     <span class="font-semibold">${labels[i]}</span>
-                    <select name="${this.container.id}-pair${i}" class="border p-1 ml-2 rounded">
+                    <select name="${selectName}" class="border p-1 ml-2 rounded">
                         <option value="">—</option>
                         ${parts.map((_, idx) => `<option value="${idx + 1}">${idx + 1}</option>`).join('')}
                     </select>
@@ -50,13 +51,14 @@ class ExamRenderer {
     render() {
         const baseId = this.container.id.replace('question-', '');
         const inputId = `input-${baseId}`;
+        const questionId = `question-${baseId}`; // ✅ Для match
 
         switch (this.type) {
             case 'task7':
                 this.renderTask7(inputId);
                 break;
             case 'match':
-                this.renderMatch();
+                this.renderMatch(questionId); // ✅ Передаём правильный ID
                 break;
             default:
                 this.container.textContent = this.text;
@@ -97,9 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             else if (q.type === "checkbox") {
-                const options = Array.isArray(q.options) ? q.options :
-                    typeof q.options === 'string' ? q.options.split('|') :
-                        [];
+                const options = Array.isArray(q.options) ? q.options : (q.options || '').split('|').filter(Boolean);
                 let optionsHtml = '';
                 options.forEach((opt, i) => {
                     optionsHtml += `
@@ -143,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ✅ ОСНОВНАЯ ОШИБКА: ТЫ НЕ ВСТАВЛЯЛ questionHtml
         container.innerHTML = questionHtml;
 
         // Теперь рендерим сложные задания
@@ -198,7 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (q.type === "match") {
                     const userAnswers = [];
                     for (let i = 0; i < 3; i++) {
-                        const val = document.querySelector(`[name="question-${q.id}-pair${i}"]`)?.value;
+                        // ✅ Исправлено: используем правильный name
+                        const selectName = `question-${q.id}-pair${i}`;
+                        const val = document.querySelector(`[name="${selectName}"]`)?.value;
                         userAnswers.push(val || '');
                     }
                     const correctAnswer = q.correct_answer?.split(',').map(s => s.trim()) || [];

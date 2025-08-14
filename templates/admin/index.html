@@ -11,9 +11,9 @@
         <h2 class="text-xl font-semibold">{{ t.name | title }} диагностика</h2>
         <p class="text-sm text-gray-600 mb-2">Текст загружен</p>
         <div class="space-x-2">
-            <a href="{{ url_for('admin.view_test', test_type=t.name) }}"
+            <a href="{{ url_for('admin.view_test', test_type_name=t.name) }}"
                 class="text-blue-600 hover:underline">Просмотреть</a>
-            <a href="{{ url_for('admin.add_question', test_type=t.name) }}"
+            <a href="{{ url_for('admin.add_question', test_type_name=t.name) }}"
                 class="text-green-600 hover:underline">Добавить вопрос</a>
         </div>
     </div>

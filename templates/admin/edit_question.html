@@ -1,87 +1,83 @@
 <!-- templates/admin/edit_question.html -->
 {% extends "base.html" %}
 
-{% block title %}Редактировать вопрос | Админка{% endblock %}
-
 {% block content %}
-<h1 class="text-2xl font-bold mb-6">✏️ Редактировать вопрос №{{ question.question_number }}</h1>
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-6 max-w-2xl">
+        <h1 class="text-2xl font-bold mb-6">Редактировать вопрос</h1>
 
-<form method="POST" class="space-y-4">
-    <div>
-        <label class="block font-medium">Номер вопроса</label>
-        <input type="number" name="question_number" value="{{ question.question_number }}" required
-            class="border p-2 w-full rounded">
+        <form method="POST">
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Номер вопроса</label>
+                <input type="number" name="question_number" value="{{ question.question_number }}"
+                    class="border p-2 w-full rounded" required min="1" max="27">
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Тип вопроса</label>
+                <select name="question_type" class="border p-2 w-full rounded" id="question-type">
+                    <option value="input" {% if question.question_type=='input' %}selected{% endif %}>Ответ текстом
+                    </option>
+                    <option value="short-answer" {% if question.question_type=='short-answer' %}selected{% endif %}>
+                        Краткий ответ (одно поле)</option>
+                    <option value="checkbox" {% if question.question_type=='checkbox' %}selected{% endif %}>Выбор
+                        нескольких</option>
+                    <option value="match" {% if question.question_type=='match' %}selected{% endif %}>Установить
+                        соответствие</option>
+                    <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>Сочинение
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Текст задания</label>
+                <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
+                    placeholder="Например: В одном из выделенных ниже слов допущена ошибка...">{{ question.question_text }}</textarea>
+            </div>
+
+            <div id="options-field"
+                class="mb-4 {% if question.question_type in ['checkbox', 'match'] %}{% else %}hidden{% endif %}">
+                <label class="block font-medium mb-2">Варианты (через |)</label>
+                <input type="text" name="options" value="{{ question.options or '' }}" class="border p-2 w-full rounded"
+                    placeholder="опция1|опция2|...">
+                <small class="text-gray-500">Используется только для "Выбор нескольких" и "Соответствие"</small>
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Правильный ответ</label>
+                <input type="text" name="correct_answer" value="{{ question.correct_answer }}"
+                    class="border p-2 w-full rounded" required placeholder="Например: две, 34, их">
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Доп. информация (для сочинения)</label>
+                <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded"
+                    placeholder="Например: Ответ должен быть не менее 150 слов">
+                <small class="text-gray-500">Появляется только для типа "Сочинение"</small>
+            </div>
+
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+                Сохранить изменения
+            </button>
+        </form>
     </div>
+</section>
 
-    <div>
-        <label class="block font-medium">Тип вопроса</label>
-        <select name="question_type" required class="border p-2 w-full rounded">
-            <option value="input" {% if question.question_type=='input' %}selected{% endif %}>Ответ текстом</option>
-            <option value="short-answer" {% if question.question_type=='short-answer' %}selected{% endif %}>Краткий
-                ответ (одно поле)</option>
-            <option value="checkbox" {% if question.question_type=='checkbox' %}selected{% endif %}>Выбор нескольких
-            </option>
-            <option value="match" {% if question.question_type=='match' %}selected{% endif %}>Установить соответствие
-            </option>
-            <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>Сочинение</option>
-        </select>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const select = document.getElementById('question-type');
+        const optionsField = document.getElementById('options-field');
 
-    <div>
-        <label class="block font-medium">Текст вопроса</label>
-        <textarea name="question_text" required rows="3"
-            class="border p-2 w-full rounded">{{ question.question_text }}</textarea>
-    </div>
-
-    <div id="options-field"
-        class="mb-4 {% if question.question_type in ['checkbox', 'match'] %}{% else %}hidden{% endif %}">
-        <label class="block font-medium">Варианты (через |, для checkbox/match)</label>
-        <input type="text" name="options" value="{{ question.options or '' }}" class="border p-2 w-full rounded">
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const select = document.getElementById('question-type');
-            const optionsField = document.getElementById('options-field');
-
-            function toggleOptions() {
-                if (select.value === 'checkbox' || select.value === 'match') {
-                    optionsField.classList.remove('hidden');
-                } else {
-                    optionsField.classList.add('hidden');
-                }
+        function toggleOptions() {
+            if (['checkbox', 'match'].includes(select.value)) {
+                optionsField.classList.remove('hidden');
+            } else {
+                optionsField.classList.add('hidden');
             }
+        }
 
-            // Показать/скрыть при загрузке
-            toggleOptions();
-
-            // Показать/скрыть при изменении
-            select.addEventListener('change', toggleOptions);
-        });
-    </script>
-
-    <div class="mb-4">
-        <label class="block font-medium mb-2">Текст задания</label>
-        <textarea name="question_text" class="border p-2 w-full rounded"
-            rows="3">{{ question.question_text }}</textarea>
-    </div>
-
-    <div>
-        <label class="block font-medium">Правильный ответ</label>
-        <input type="text" name="correct_answer" value="{{ question.correct_answer }}" required
-            class="border p-2 w-full rounded">
-        <p class="text-sm text-gray-500">Для checkbox: 0,1; для match: 1,3,5</p>
-    </div>
-
-    <div>
-        <label class="block font-medium">Доп. информация (для сочинений)</label>
-        <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded">
-    </div>
-
-    <div class="flex gap-4">
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Сохранить</button>
-        <a href="{{ url_for('admin.view_test', test_type=question.test.type.name) }}"
-            class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Отмена</a>
-    </div>
-</form>
+        toggleOptions();
+        select.addEventListener('change', toggleOptions);
+    });
+</script>
 {% endblock %}

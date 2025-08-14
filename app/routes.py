@@ -62,9 +62,10 @@ def about():
 # Путь к файлу
 DATA_FILE = os.path.join(os.path.dirname(__file__), '..', 'database', 'examenator.db')
 
-# ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Добавляем @login_required к /examenator
+
+
 @main.route('/examenator')
-@login_required  # ← Эта строка защищает маршрут
+@login_required   # ← Эта строка защищает маршрут
 def examenator():
     examenator_data = {}
     test_types = ['incoming', 'current', 'final']
@@ -80,14 +81,14 @@ def examenator():
             }
             for q in test.questions:
                 examenator_data[t]['questions'].append({
-                'id': q.question_number,
-                'type': q.question_type,
-                'question': q.question_text,
-                'question_text': q.question_text,
-                'options': q.options.split('|') if q.options else [],
-                'correct_answer': q.correct_answer,
-                'info': q.info
-            })
+                    'id': q.question_number,
+                    'type': q.question_type,
+                    'question': q.question_text,
+                    'question_text': q.question_text,
+                    'options': q.options.split('|') if q.options else [],
+                    'correct_answer': q.correct_answer,
+                    'info': q.info
+                })
 
     return render_template('examenator.html', examenatorData=examenator_data, test_types=test_types)
 

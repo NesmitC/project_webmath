@@ -4,10 +4,10 @@
 {% block title %}Просмотр теста | Админка{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">{{ type_obj.name | title }} диагностика</h1>
+<h1 class="text-2xl font-bold mb-4">{{ test_type.name | title }} диагностика</h1>
 
 <!-- Кнопка редактирования текста теста -->
-<a href="{{ url_for('admin.edit_test', test_type=type_obj.name) }}"
+<a href="{{ url_for('admin.edit_test', test_type_name=test_type.name) }}"
     class="inline-block mb-6 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm">
     ✏️ Редактировать текст теста
 </a>
@@ -49,12 +49,6 @@
                 ✏️ Редактировать
             </a>
 
-            <!-- Опционально: кнопка удаления (если добавишь позже) -->
-            <!--
-            <form action="{{ url_for('admin.delete_question', question_id=q.id) }}" method="POST" class="inline" onsubmit="return confirm('Удалить вопрос?')">
-                <button type="submit" class="text-red-600 hover:text-red-800 text-sm">🗑️ Удалить</button>
-            </form>
-            -->
         </div>
     </div>
     {% else %}
@@ -64,7 +58,7 @@
 
 <!-- Кнопка добавления вопроса -->
 <div class="mt-6">
-    <a href="{{ url_for('admin.add_question', test_type=type_obj.name) }}"
+    <a href="{{ url_for('admin.add_question', test_type_name=test_type.name) }}"
         class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition">
         ➕ Добавить вопрос
     </a>

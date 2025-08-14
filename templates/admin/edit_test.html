@@ -20,7 +20,7 @@
     <div class="flex gap-4">
         <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Сохранить
             изменения</button>
-        <a href="{{ url_for('admin.view_test', test_type=type_obj.name) }}"
+        <a href="{{ url_for('admin.view_test', test_type_name=test_type.name) }}"
             class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">Отмена</a>
     </div>
 </form>
