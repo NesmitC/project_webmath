@@ -25,51 +25,34 @@ def index():
     types = TestType.query.all()
     return render_template('admin/index.html', types=types)
 
-@admin.route('/add-test/<test_type_name>', methods=['GET', 'POST'])
-@admin_required
-def add_test(test_type_name):
-    if request.method == 'POST':
-        title = request.form['title']
-        test_text = request.form['test_text']
-
-        test_type = TestType.query.filter_by(name=test_type_name).first()
-        if not test_type:
-            flash("Тип теста не найден.")
-            return redirect(url_for('admin.index'))
-
-        test = Test(title=title, test_text=test_text, test_type_id=test_type.id)
-        db.session.add(test)
-        db.session.commit()
-        flash("✅ Тест добавлен")
-        return redirect(url_for('admin.index'))
-
-    return render_template('admin/add_test.html', test_type_name=test_type_name)
-
 
 @admin.route('/add-question/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_question(test_type_name):
-    test_type = TestType.query.filter_by(name=test_type_name).first()
-    if not test_type or not test_type.tests:
-        flash("Сначала создайте тест.")
+    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
+    
+    test = Test.query.filter_by(test_type=test_type).first()
+    
+    if not test:
+        flash("Сначала создайте тест для этого типа.")
         return redirect(url_for('admin.index'))
-
-    test = test_type.tests[0]
 
     if request.method == 'POST':
         question_number = int(request.form['question_number'])
         question_type = request.form['question_type']
+        task_text = request.form.get('task_text')  # может быть None
         question_text = request.form['question_text']
+        options = request.form.get('options')
         correct_answer = request.form['correct_answer']
-        options = request.form.get('options')  # может быть None
         info = request.form.get('info')
 
         question = Question(
             question_number=question_number,
             question_type=question_type,
+            task_text=task_text,
             question_text=question_text,
-            correct_answer=correct_answer,
             options=options,
+            correct_answer=correct_answer,
             info=info,
             test_id=test.id
         )
@@ -89,6 +72,7 @@ def edit_question(question_id):
     if request.method == 'POST':
         question.question_number = int(request.form['question_number'])
         question.question_type = request.form['question_type']
+        task_text = request.form.get('task_text')  # может быть None
         question.question_text = request.form['question_text']
         question.correct_answer = request.form['correct_answer']
         question.options = request.form.get('options')  # может быть None
