@@ -4,9 +4,7 @@ from app.models import TestType, Test, Question, User
 from app import db
 from functools import wraps
 
-# Импортируем admin из текущего пакета
-from . import admin
-
+from app.routes import main
 
 def admin_required(f):
     @wraps(f)
@@ -20,7 +18,7 @@ def admin_required(f):
     return decorated_function
 
 
-@admin.route('/')
+@main.route('/')
 @admin_required
 def index():
     types = TestType.query.all()
@@ -31,10 +29,39 @@ def get_test_by_type_name(test_type_name):
     """Унифицированная функция для получения теста по имени типа"""
     test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
     test = Test.query.filter_by(test_type_id=test_type.id).first()
+
     return test, test_type
 
 
-@admin.route('/add-test/<test_type_name>', methods=['GET', 'POST'])
+@main.route('/admin/diagnostic/<diagnostic_type>')
+@admin_required
+def select_diagnostic(diagnostic_type):
+    # Сопоставление типа диагностики с именем test_type
+    type_map = {
+        'incoming': 'ege_rus_incoming',
+        'current': 'ege_rus_current',
+        'final': 'ege_rus_final'
+    }
+
+    if diagnostic_type not in type_map:
+        flash("❌ Неверный тип диагностики", "error")
+        return redirect(url_for('admin.index'))
+
+    test_type_name = type_map[diagnostic_type]
+    test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
+
+    # Проверим, есть ли уже тест
+    test = Test.query.filter_by(test_type_id=test_type.id).first()
+
+    return render_template(
+        'admin/manage_diagnostic.html',
+        test_type=test_type,
+        test=test,
+        diagnostic_type=diagnostic_type
+    )
+
+
+@main.route('/admin/add-test/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_test(test_type_name):
     test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
@@ -62,7 +89,7 @@ def add_test(test_type_name):
     return render_template('admin/add_test.html', test_type_name=test_type_name)
 
 
-@admin.route('/add-question/<test_type_name>', methods=['GET', 'POST'])
+@main.route('/admin/add-question/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_question(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)
@@ -89,7 +116,7 @@ def add_question(test_type_name):
     return render_template('admin/add_question.html', test_type_name=test_type_name, test=test)
 
 
-@admin.route('/edit-question/<int:question_id>', methods=['GET', 'POST'])
+@main.route('/admin/edit-question/<int:question_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_question(question_id):
     question = Question.query.get_or_404(question_id)
@@ -110,7 +137,7 @@ def edit_question(question_id):
     return render_template('admin/edit_question.html', question=question)
 
 
-@admin.route('/edit-test/<test_type_name>', methods=['GET', 'POST'])
+@main.route('/admin/edit-test/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def edit_test(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)
@@ -128,7 +155,7 @@ def edit_test(test_type_name):
     return render_template('admin/edit_test.html', test=test, test_type=test_type)
 
 
-@admin.route('/view-test/<test_type_name>')
+@main.route('/admin/view-test/<test_type_name>')
 @admin_required
 def view_test(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)

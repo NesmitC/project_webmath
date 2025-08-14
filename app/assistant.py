@@ -118,8 +118,8 @@ def get_retriever():
 
 # --- DeepSeek API ---
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-if not DEEPSEEK_API_KEY:
-    raise EnvironmentError("DEEPSEEK_API_KEY не установлена")
+# if not DEEPSEEK_API_KEY:
+  #  raise EnvironmentError("DEEPSEEK_API_KEY не установлена")
 
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 HEADERS = {

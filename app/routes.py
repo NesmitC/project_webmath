@@ -10,8 +10,6 @@ from functools import wraps
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 from app import db, mail
-# from .forms import TestForm
-from app.forms import TestForm
 
 
 main = Blueprint('main', __name__)
@@ -33,17 +31,6 @@ def login_required(f):
 def index():
     return render_template('index.html')
 
-
-@main.route('/admin', methods=['GET', 'POST'])
-def admin():
-    form = TestForm()
-    if form.validate_on_submit():
-        test = Test(title=form.title.data, subject=form.subject.data)
-        db.session.add(test)
-        db.session.commit()
-        return redirect(url_for('main.admin'))
-    tests = Test.query.all()
-    return render_template('admin.html', form=form, tests=tests)
 
 
 @main.route('/ask', methods=['POST'])

@@ -1,29 +1,72 @@
-<!-- backend/templates/admin.html -->
-<h1>Админ-панель</h1>
+<!DOCTYPE html>
+<html lang="ru">
 
-<!-- Форма добавления теста -->
-<h3>Добавить тест</h3>
-<form method="POST">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель — Нейростат</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
 
-    <div>
-        {{ form.title.label }}<br>
-        {{ form.title(size=50) }}
+        .container {
+            max-width: 900px;
+        }
+
+        .diagnostic-card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .diagnostic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Нейростат</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="text-center mb-4">Выбери тип диагностики</h1>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="diagnostic-card card h-100" onclick="window.location='/admin/diagnostic/incoming'">
+                    <div class="card-body text-center">
+                        <h3>Входящая</h3>
+                        <p>Оценка стартового уровня</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="diagnostic-card card h-100" onclick="window.location='/admin/diagnostic/current'">
+                    <div class="card-body text-center">
+                        <h3>Текущая</h3>
+                        <p>Промежуточное тестирование</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="diagnostic-card card h-100" onclick="window.location='/admin/diagnostic/final'">
+                    <div class="card-body text-center">
+                        <h3>Контрольная</h3>
+                        <p>Итоговая проверка знаний</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-5">
+        <a href="/" class="btn btn-secondary">← На сайт</a>
     </div>
-    <div style="margin-top: 10px;">
-        {{ form.subject.label }}<br>
-        {{ form.subject() }}
-    </div>
-    <div style="margin-top: 10px;">
-        {{ form.submit() }}
-    </div>
-</form>
+</body>
 
-<!-- Список тестов -->
-<h3>Существующие тесты</h3>
-<ul>
-    {% for test in tests %}
-    <li>{{ test.title }} ({{ test.subject }})</li>
-    {% endfor %}
-</ul>
-
-<a href="/">На главную</a>
+</html>

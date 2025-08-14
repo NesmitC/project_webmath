@@ -2,7 +2,4 @@
 from flask import Blueprint
 
 # Создаём Blueprint
-admin = Blueprint('admin', __name__, url_prefix='/admin', template_folder='../../templates/admin')
-
-# Важно: импортируем маршруты ПОСЛЕ создания admin
-from . import routes
+admin = Blueprint('admin', __name__, url_prefix='/admin', template_folder='templates')

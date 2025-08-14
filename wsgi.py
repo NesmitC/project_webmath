@@ -27,7 +27,7 @@ with app.app_context():
     db.create_all()
     print("✅ Все таблицы созданы: users, test_types, tests, questions")
 
-# 4. Теперь можно импортировать модули, зависящие от app/db
+# . Теперь можно импортировать модули, зависящие от app/db
 from flask import render_template, request, jsonify
 from app.assistant import ask_teacher
 from app.neuro_method import ask_methodist

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ test_type.title }} — Управление</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Нейростат</a>
+            <a href="{{ url_for('admin.index') }}" class="btn btn-light btn-sm">← Назад</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <h2>{{ test_type.title }}</h2>
+        <p>{{ test_type.description }}</p>
+
+        <!-- Кнопки управления -->
+        {% if not test %}
+        <a href="{{ url_for('admin.add_test', test_type_name=test_type.name) }}" class="btn btn-success mb-4">
+            ➕ Создать тест
+        </a>
+        {% else %}
+        <div class="mb-4">
+            <h4>{{ test.title }}</h4>
+            <p>{{ test.test_text|truncate(200) }}...</p>
+            <a href="{{ url_for('admin.edit_test', test_type_name=test_type.name) }}" class="btn btn-warning">✏️
+                Редактировать тест</a>
+            <a href="{{ url_for('admin.view_test', test_type_name=test_type.name) }}" class="btn btn-info">👁️
+                Посмотреть вопросы</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

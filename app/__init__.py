@@ -54,10 +54,13 @@ def create_app():
     app.context_processor(inject_user)
 
     # Регистрируем Blueprint'ы
-    from .routes import main
-    from .admin import admin
+    from app.routes import main
+
+#    from app.admin import admin
     app.register_blueprint(main)
-    app.register_blueprint(admin)
+#    app.register_blueprint(admin)
+
+#    from app.admin import routes
 
     return app
 
