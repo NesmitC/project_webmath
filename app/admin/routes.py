@@ -1,10 +1,11 @@
 # app/admin/routes.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from app.admin import admin
+
+from flask import render_template, request, redirect, url_for, flash, session
 from app.models import TestType, Test, Question, User
 from app import db
 from functools import wraps
 
-from app.routes import main
 
 def admin_required(f):
     @wraps(f)
@@ -18,7 +19,7 @@ def admin_required(f):
     return decorated_function
 
 
-@main.route('/')
+@admin.route('/')
 @admin_required
 def index():
     types = TestType.query.all()
@@ -33,10 +34,11 @@ def get_test_by_type_name(test_type_name):
     return test, test_type
 
 
-@main.route('/admin/diagnostic/<diagnostic_type>')
+@admin.route('/diagnostic/<diagnostic_type>')
 @admin_required
 def select_diagnostic(diagnostic_type):
-    # Сопоставление типа диагностики с именем test_type
+    print(f"✅ Вызван маршрут: diagnostic_type = {diagnostic_type}")  # ← отладка
+    
     type_map = {
         'incoming': 'ege_rus_incoming',
         'current': 'ege_rus_current',
@@ -61,7 +63,7 @@ def select_diagnostic(diagnostic_type):
     )
 
 
-@main.route('/admin/add-test/<test_type_name>', methods=['GET', 'POST'])
+@admin.route('/add-test/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_test(test_type_name):
     test_type = TestType.query.filter_by(name=test_type_name).first_or_404()
@@ -89,7 +91,7 @@ def add_test(test_type_name):
     return render_template('admin/add_test.html', test_type_name=test_type_name)
 
 
-@main.route('/admin/add-question/<test_type_name>', methods=['GET', 'POST'])
+@admin.route('/add-question/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def add_question(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)
@@ -116,7 +118,7 @@ def add_question(test_type_name):
     return render_template('admin/add_question.html', test_type_name=test_type_name, test=test)
 
 
-@main.route('/admin/edit-question/<int:question_id>', methods=['GET', 'POST'])
+@admin.route('/edit-question/<int:question_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_question(question_id):
     question = Question.query.get_or_404(question_id)
@@ -137,7 +139,7 @@ def edit_question(question_id):
     return render_template('admin/edit_question.html', question=question)
 
 
-@main.route('/admin/edit-test/<test_type_name>', methods=['GET', 'POST'])
+@admin.route('/edit-test/<test_type_name>', methods=['GET', 'POST'])
 @admin_required
 def edit_test(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)
@@ -155,7 +157,7 @@ def edit_test(test_type_name):
     return render_template('admin/edit_test.html', test=test, test_type=test_type)
 
 
-@main.route('/admin/view-test/<test_type_name>')
+@admin.route('/view-test/<test_type_name>')
 @admin_required
 def view_test(test_type_name):
     test, test_type = get_test_by_type_name(test_type_name)
