@@ -23,21 +23,21 @@
                 </select>
             </div>
 
-            <!-- Поле: Текст задания (появляется для short-answer, checkbox, match) -->
+            <!-- Общий текст задания (для short-answer, checkbox, match) -->
             <div id="task-text-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Текст задания (общий)</label>
                 <textarea name="task_text" class="border p-2 w-full rounded" rows="3"
                     placeholder="Например: В одном из слов допущена ошибка..."></textarea>
             </div>
 
-            <!-- Поле: Текст вопроса -->
+            <!-- Конкретный вопрос -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Текст вопроса</label>
                 <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
                     placeholder="Например: опытные КОНСТРУКТОРЫ"></textarea>
             </div>
 
-            <!-- Поле: Варианты (для checkbox, match) -->
+            <!-- Варианты (для checkbox, match) -->
             <div id="options-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Варианты (через |)</label>
                 <input type="text" name="options" class="border p-2 w-full rounded" placeholder="опция1|опция2|...">
@@ -77,7 +77,6 @@
 
         const type = this.value;
 
-        // Показываем/скрываем поля
         if (['short-answer', 'checkbox', 'match'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {

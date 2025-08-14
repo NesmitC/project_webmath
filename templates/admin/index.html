@@ -1,22 +1,46 @@
+<!-- templates/admin/index.html -->
 {% extends "base.html" %}
 
-{% block title %}Админка | Нейростат{% endblock %}
-
 {% block content %}
-<h1 class="text-2xl font-bold mb-6">🔧 Админка — Управление тестами</h1>
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-6 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-8 text-center">Админ-панель</h1>
 
-<div class="space-y-4">
-    {% for t in types %}
-    <div class="bg-white p-4 rounded border">
-        <h2 class="text-xl font-semibold">{{ t.name | title }} диагностика</h2>
-        <p class="text-sm text-gray-600 mb-2">Текст загружен</p>
-        <div class="space-x-2">
-            <a href="{{ url_for('admin.view_test', test_type_name=t.name) }}"
-                class="text-blue-600 hover:underline">Просмотреть</a>
-            <a href="{{ url_for('admin.add_question', test_type_name=t.name) }}"
-                class="text-green-600 hover:underline">Добавить вопрос</a>
+        <div class="space-y-6">
+            {% for test_type in types %}
+            <div class="p-6 border rounded-lg bg-gray-50 shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">{{ test_type.name | title }} диагностика</h2>
+
+                {% if test_type.tests %}
+                <p class="text-green-700 mb-4">✅ Тест создан</p>
+
+                <!-- Кнопка: Просмотреть тест -->
+                <a href="{{ url_for('admin.view_test', test_type_name=test_type.name) }}"
+                    class="inline-block mb-2 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition">
+                    👁 Просмотреть тест
+                </a>
+
+                <!-- Кнопка: Добавить вопрос -->
+                <a href="{{ url_for('admin.add_question', test_type_name=test_type.name) }}"
+                    class="inline-block mb-2 bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded transition ml-2">
+                    ➕ Добавить вопрос
+                </a>
+
+                <!-- Кнопка: Редактировать тест -->
+                <a href="{{ url_for('admin.edit_test', test_type_name=test_type.name) }}"
+                    class="inline-block mb-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded transition ml-2">
+                    ✏️ Редактировать тест
+                </a>
+                {% else %}
+                <p class="text-red-600 mb-4">❌ Тест не создан</p>
+                <a href="{{ url_for('admin.add_test', test_type_name=test_type.name) }}"
+                    class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded transition">
+                    ➕ Создать тест
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
-</div>
+</section>
 {% endblock %}

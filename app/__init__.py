@@ -10,14 +10,18 @@ db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()
 
-# Контекстный процессор — доступен во всех шаблонах
+
 def inject_user():
-    from app.models import User  # ✅ Импорт внутри функции
+    from app.models import User
+    user = None
     if 'user_id' in session:
+        # Пытаемся найти пользователя
         user = User.query.get(session['user_id'])
-    else:
-        user = None
+        # 🔽 Если не найден — очищаем сессию
+        if user is None:
+            session.pop('user_id', None)
     return dict(current_user=user)
+
 
 def create_app():
     basedir = os.path.dirname(os.path.dirname(__file__))

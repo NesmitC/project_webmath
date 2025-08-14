@@ -7,7 +7,7 @@ class TestType(db.Model):
     __tablename__ = 'test_types'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(50), nullable=False)
 
     # Связь: один тип → много тестов
     tests = db.relationship('Test', back_populates='test_type')
@@ -19,8 +19,9 @@ class Test(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     test_text = db.Column(db.Text, nullable=False)
+
     test_type_id = db.Column(db.Integer, db.ForeignKey('test_types.id'), nullable=False)  # ✅ Обязательно!
-    test_type = db.relationship('TestType', backref='related_tests')  # Опционально
+    test_type = db.relationship('TestType', back_populates='tests')  # Опционально
 
     # Связь: один тест → много вопросов
     questions = db.relationship('Question', backref='test', lazy=True)
@@ -30,14 +31,14 @@ class Question(db.Model):
     __tablename__ = 'questions'
 
     id = db.Column(db.Integer, primary_key=True)
-    test_id = db.Column(db.Integer, db.ForeignKey('tests.id'), nullable=False)
     question_number = db.Column(db.Integer, nullable=False)
     question_type = db.Column(db.String(50), nullable=False)
     task_text = db.Column(db.Text)  # Новый: общий текст задания
-    question_text = db.Column(db.Text, nullable=False)
-    options = db.Column(db.Text)
-    correct_answer = db.Column(db.Text)
+    question_text = db.Column(db.Text, nullable=False)  # текст конкретного вопроса
+    options = db.Column(db.Text)   # Варианты (для checkbox/match)
+    correct_answer = db.Column(db.String(200), nullable=False)
     info = db.Column(db.Text)
+    test_id = db.Column(db.Integer, db.ForeignKey('tests.id'), nullable=False)
 
 
 # === НОВОЕ: Пользователь и результаты ===

@@ -90,20 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const inputId = `${type}-q${q.id}`;
             const questionContainerId = `question-${q.id}`;
 
-            if (['short-answer', 'checkbox', 'match'].includes(q.type)) {
+            if (['short-answer', 'checkbox', 'match'].includes(q.type) && q.task_text) {
                 questionHtml += `
-        <div class="mb-2 text-sm text-gray-700">${q.task_text}</div>
+        <div class="mb-2 text-sm text-gray-700">${q.task_text}</div>`;
+            }
+
+            questionHtml += `
         <div class="mb-6 p-4 border rounded bg-white">
-            <p class="font-semibold mb-3">${q.id}. ${q.question_text}</p>
+            <p class="font-semibold mb-3">${q.id}. ${q.question}</p>
             <!-- остальное -->
         </div>`;
-            }
-            else {
-                questionHtml += `
-        <div class="mb-6 p-4 border rounded bg-white">
-            <p class="font-semibold mb-3">${q.id}. ${q.question_text}</p>
-        </div>`;
-            };
 
             if (q.type === "input" || q.type === "short-answer") {
                 questionHtml += `

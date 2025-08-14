@@ -29,55 +29,90 @@
                 </select>
             </div>
 
-            <div class="mb-4">
-                <label class="block font-medium mb-2">Текст задания</label>
-                <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
-                    placeholder="Например: В одном из выделенных ниже слов допущена ошибка...">{{ question.question_text }}</textarea>
+            <!-- ✅ Поле: Текст задания (общий) -->
+            <div id="task-text-field"
+                class="mb-4 {% if question.question_type in ['short-answer', 'checkbox', 'match'] %}{% else %}hidden{% endif %}">
+                <label class="block font-medium mb-2">Текст задания (общий)</label>
+                <textarea name="task_text" class="border p-2 w-full rounded" rows="3"
+                    placeholder="Например: В одном из слов допущена ошибка...">{{ question.task_text }}</textarea>
             </div>
 
+            <!-- ✅ Поле: Текст вопроса -->
+            <div class="mb-4">
+                <label class="block font-medium mb-2">Текст вопроса</label>
+                <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
+                    placeholder="Например: опытные КОНСТРУКТОРЫ">{{ question.question_text }}</textarea>
+            </div>
+
+            <!-- ✅ Поле: Варианты (для checkbox, match) -->
             <div id="options-field"
                 class="mb-4 {% if question.question_type in ['checkbox', 'match'] %}{% else %}hidden{% endif %}">
                 <label class="block font-medium mb-2">Варианты (через |)</label>
                 <input type="text" name="options" value="{{ question.options or '' }}" class="border p-2 w-full rounded"
                     placeholder="опция1|опция2|...">
-                <small class="text-gray-500">Используется только для "Выбор нескольких" и "Соответствие"</small>
             </div>
 
+            <!-- ✅ Правильный ответ -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Правильный ответ</label>
                 <input type="text" name="correct_answer" value="{{ question.correct_answer }}"
-                    class="border p-2 w-full rounded" required placeholder="Например: две, 34, их">
+                    class="border p-2 w-full rounded" required>
             </div>
 
-            <div class="mb-4">
-                <label class="block font-medium mb-2">Доп. информация (для сочинения)</label>
+            <!-- ✅ Доп. инфо (для сочинения) -->
+            <div id="info-field" class="mb-4 {% if question.question_type == 'textarea' %}{% else %}hidden{% endif %}">
+                <label class="block font-medium mb-2">Доп. информация</label>
                 <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded"
-                    placeholder="Например: Ответ должен быть не менее 150 слов">
-                <small class="text-gray-500">Появляется только для типа "Сочинение"</small>
+                    placeholder="Ответ должен быть не менее 150 слов">
             </div>
 
-            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
-                Сохранить изменения
-            </button>
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    Сохранить изменения
+                </button>
+                <a href="{{ url_for('admin.view_test', test_type_name=question.test.test_type.name) }}"
+                    class="text-gray-600 hover:underline">
+                    Отмена
+                </a>
+            </div>
         </form>
     </div>
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const select = document.getElementById('question-type');
+    // Показываем/скрываем поля в зависимости от типа вопроса
+    document.getElementById('question-type').addEventListener('change', function () {
+        const taskTextField = document.getElementById('task-text-field');
         const optionsField = document.getElementById('options-field');
+        const infoField = document.getElementById('info-field');
+        const type = this.value;
 
-        function toggleOptions() {
-            if (['checkbox', 'match'].includes(select.value)) {
-                optionsField.classList.remove('hidden');
-            } else {
-                optionsField.classList.add('hidden');
-            }
+        // Показываем task_text для short-answer, checkbox, match
+        if (['short-answer', 'checkbox', 'match'].includes(type)) {
+            taskTextField.classList.remove('hidden');
+        } else {
+            taskTextField.classList.add('hidden');
         }
 
-        toggleOptions();
-        select.addEventListener('change', toggleOptions);
+        // Показываем options для checkbox, match
+        if (['checkbox', 'match'].includes(type)) {
+            optionsField.classList.remove('hidden');
+        } else {
+            optionsField.classList.add('hidden');
+        }
+
+        // Показываем info для textarea
+        if (type === 'textarea') {
+            infoField.classList.remove('hidden');
+        } else {
+            infoField.classList.add('hidden');
+        }
+    });
+
+    // Запускаем при загрузке, чтобы правильно отобразить текущие поля
+    document.addEventListener('DOMContentLoaded', function () {
+        const event = new Event('change');
+        document.getElementById('question-type').dispatchEvent(event);
     });
 </script>
 {% endblock %}

@@ -16,13 +16,18 @@ load_dotenv(dotenv_path)
 print(f"✅ .env успешно загружен из: {dotenv_path}")
 
 # 2. Создаём приложение ДО импортов
-from app import create_app
+from app import create_app, db
 app = create_app()
 
 # Устанавливаем secret_key из .env
 app.secret_key = os.getenv('SECRET_KEY')
 
-# 3. Теперь можно импортировать модули, зависящие от app/db
+# 3. Создаём таблицы в контексте приложения
+with app.app_context():
+    db.create_all()
+    print("✅ Все таблицы созданы: users, test_types, tests, questions")
+
+# 4. Теперь можно импортировать модули, зависящие от app/db
 from flask import render_template, request, jsonify
 from app.assistant import ask_teacher
 from app.neuro_method import ask_methodist
