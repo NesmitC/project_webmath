@@ -12,24 +12,36 @@
         {% for q in questions %}
         <div class="border-b border-gray-200 pb-6 mb-6">
             <h3 class="font-semibold text-lg">Задание {{ q.question_number }}.</h3>
-            {% if q.task_text %}
-            <p class="task-instruction text-sm text-gray-700 mb-2">{{ q.task_text }}</p>
-            {% endif %}
-            <p class="mb-3">{{ q.question_text }}</p>
 
-            <!-- Тип: input -->
-            {% if q.question_type == 'input' %}
+            <!-- Тип: contextual-input (ЕГЭ-стиль) -->
+            {% if q.question_type == 'contextual-input' %}
+            {% if q.context_text %}
+            <div class="context-block mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                <h4 class="font-semibold text-blue-800 mb-2">Текст для анализа:</h4>
+                <p class="text-blue-700 whitespace-pre-wrap text-sm leading-relaxed">{{ q.context_text }}</p>
+            </div>
+            {% endif %}
             {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-3">{{ q.task_text }}</p>
+            {% endif %}
+            <input type="text" name="answer_{{ q.id }}" class="form-control w-full border p-2 rounded" required>
+
+            <!-- Тип: input (текстовый ответ) -->
+            {% elif q.question_type == 'input' %}
+            {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-2">{{ q.task_text }}</p>
+            {% endif %}
             <p class="question-text mb-3">{{ q.question_text }}</p>
-            <input type="text" name="answer_{{ q.id }}" class="form-control w-full" required>
-            <p class="task-instruction font-medium mb-2">{{ q.task_text }}</p>
-            {% endif %}
-            {% endif %}
+            <input type="text" name="answer_{{ q.id }}" class="form-control w-full border p-2 rounded" required>
 
             <!-- Тип: single (один из списка) -->
             {% elif q.question_type == 'single' %}
+            {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-2">{{ q.task_text }}</p>
+            {% endif %}
+            <p class="question-text mb-3">{{ q.question_text }}</p>
             {% for opt in q.options.split(';') if opt.strip() %}
-            <div class="form-check">
+            <div class="form-check mb-1">
                 <input class="form-check-input" type="radio" name="answer_{{ q.id }}" value="{{ opt.strip() }}"
                     id="q{{ q.id }}_opt{{ loop.index }}" required>
                 <label class="form-check-label" for="q{{ q.id }}_opt{{ loop.index }}">
@@ -38,12 +50,15 @@
             </div>
             {% endfor %}
 
-            <!-- Тип: multiple (несколько) -->
+            <!-- Тип: multiple (несколько из списка) -->
             {% elif q.question_type == 'multiple' %}
-            {% set opts = q.options.split('|') %}
-            {% for opt in opts if opt.strip() %}
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="answer_{{ q.id }}[]" value="{{ opt.strip() }}"
+            {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-2">{{ q.task_text }}</p>
+            {% endif %}
+            <p class="question-text mb-3">{{ q.question_text }}</p>
+            {% for opt in q.options.split('|') if opt.strip() %}
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="answer_{{ q.id }}" value="{{ opt.strip() }}"
                     id="q{{ q.id }}_opt{{ loop.index }}">
                 <label class="form-check-label" for="q{{ q.id }}_opt{{ loop.index }}">
                     {{ opt.strip() }}
@@ -53,18 +68,27 @@
 
             <!-- Тип: matching (соответствие) -->
             {% elif q.question_type == 'matching' %}
-            <p><small>Установите соответствие между словами и их значениями.</small></p>
-            <!-- Можно добавить таблицу -->
+            {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-2">{{ q.task_text }}</p>
+            {% endif %}
+            <p class="question-text mb-3">{{ q.question_text }}</p>
+            <p><small class="text-muted">Установите соответствие между элементами.</small></p>
+            <!-- Можно расширить таблицей -->
 
             {% else %}
-            <p class="text-muted">Тип вопроса не поддерживается.</p>
+            <p class="text-muted text-red-600">Тип вопроса не поддерживается.</p>
             {% endif %}
         </div>
         {% endfor %}
 
-        <button type="submit" class="btn btn-primary btn-lg">Завершить тест</button>
+        <button type="submit"
+            class="btn btn-primary btn-lg px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Завершить тест
+        </button>
     </form>
 
-    <a href="{{ url_for('main.profile') }}" class="btn btn-secondary mt-3">← Назад</a>
+    <a href="{{ url_for('main.profile') }}" class="btn btn-secondary mt-4 text-gray-600 hover:underline block w-fit">
+        ← Назад в профиль
+    </a>
 </div>
 {% endblock %}

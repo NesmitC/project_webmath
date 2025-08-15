@@ -1,4 +1,4 @@
-# seed.py
+# seed.py python seed.py
 from app import create_app, db
 from app.models import TestType
 

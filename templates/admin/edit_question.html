@@ -4,7 +4,7 @@
 {% block content %}
 <section class="py-12 bg-white">
     <div class="container mx-auto px-6 max-w-2xl">
-        <h1 class="text-2xl font-bold mb-6">Редактировать вопрос</h1>
+        <h1 class="text-2xl font-bold mb-6">Редактировать вопрос: {{ question.test.test_type.title }}</h1>
 
         <form method="POST">
             <div class="mb-4">
@@ -16,51 +16,65 @@
             <div class="mb-4">
                 <label class="block font-medium mb-2">Тип вопроса</label>
                 <select name="question_type" class="border p-2 w-full rounded" id="question-type">
-                    <option value="input" {% if question.question_type=='input' %}selected{% endif %}>Ответ текстом
+                    <option value="input" {% if question.question_type=='input' %}selected{% endif %}>
+                        Ответ текстом
                     </option>
-                    <option value="short-answer" {% if question.question_type=='short-answer' %}selected{% endif %}>
-                        Краткий ответ (одно поле)</option>
-                    <option value="checkbox" {% if question.question_type=='checkbox' %}selected{% endif %}>Выбор
-                        нескольких</option>
-                    <option value="match" {% if question.question_type=='match' %}selected{% endif %}>Установить
-                        соответствие</option>
-                    <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>Сочинение
+                    <option value="contextual-input" {% if question.question_type=='contextual-input' %}selected{% endif
+                        %}>
+                        Задание с текстом (ЕГЭ-стиль)
+                    </option>
+                    <option value="single" {% if question.question_type=='single' %}selected{% endif %}>
+                        Краткий ответ (одно поле)
+                    </option>
+                    <option value="multiple" {% if question.question_type=='multiple' %}selected{% endif %}>
+                        Выбор нескольких
+                    </option>
+                    <option value="matching" {% if question.question_type=='matching' %}selected{% endif %}>
+                        Установить соответствие
+                    </option>
+                    <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>
+                        Сочинение
                     </option>
                 </select>
             </div>
 
-            <!-- ✅ Поле: Текст задания (общий) -->
-            <div id="task-text-field"
-                class="mb-4 {% if question.question_type in ['short-answer', 'checkbox', 'match'] %}{% else %}hidden{% endif %}">
-                <label class="block font-medium mb-2">Текст задания (общий)</label>
-                <textarea name="task_text" class="border p-2 w-full rounded"
-                    rows="3">{{ question.task_text }}</textarea>
+            <!-- Текст для анализа -->
+            <div id="context-text-field" class="mb-4 hidden">
+                <label class="block font-medium mb-2">Текст для анализа</label>
+                <textarea name="context_text" class="border p-2 w-full rounded" rows="6"
+                    placeholder="Вставьте текст, как в КИМе...">{{ question.context_text }}</textarea>
             </div>
 
-            <!-- ✅ Поле: Текст вопроса -->
+            <!-- Общий текст задания (для input, contextual-input, single, multiple, matching) -->
+            <div id="task-text-field" class="mb-4 hidden">
+                <label class="block font-medium mb-2">Текст задания (общий)</label>
+                <textarea name="task_text" class="border p-2 w-full rounded" rows="3"
+                    placeholder="Например: В одном из слов допущена ошибка...">{{ question.task_text }}</textarea>
+            </div>
+
+            <!-- Конкретный вопрос -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Текст вопроса</label>
                 <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
                     placeholder="Например: опытные КОНСТРУКТОРЫ">{{ question.question_text }}</textarea>
             </div>
 
-            <!-- ✅ Поле: Варианты (для checkbox, match) -->
-            <div id="options-field"
-                class="mb-4 {% if question.question_type in ['checkbox', 'match'] %}{% else %}hidden{% endif %}">
+            <!-- Варианты (для multiple, matching) -->
+            <div id="options-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Варианты (через |)</label>
                 <input type="text" name="options" value="{{ question.options or '' }}" class="border p-2 w-full rounded"
-                    placeholder="опция1|опция2|...">
+                    placeholder="1) опция1; 2) опция2; 3) опция3">
             </div>
 
-            <!-- ✅ Правильный ответ -->
+            <!-- Правильный ответ -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Правильный ответ</label>
                 <input type="text" name="correct_answer" value="{{ question.correct_answer }}"
                     class="border p-2 w-full rounded" required>
             </div>
 
-            <!-- ✅ Доп. инфо (для сочинения) -->
-            <div id="info-field" class="mb-4 {% if question.question_type == 'textarea' %}{% else %}hidden{% endif %}">
+            <!-- Доп. инфо (для сочинения) -->
+            <div id="info-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Доп. информация</label>
                 <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded"
                     placeholder="Ответ должен быть не менее 150 слов">
@@ -80,39 +94,50 @@
 </section>
 
 <script>
-    // Показываем/скрываем поля в зависимости от типа вопроса
-    document.getElementById('question-type').addEventListener('change', function () {
-        const taskTextField = document.getElementById('task-text-field');
-        const optionsField = document.getElementById('options-field');
-        const infoField = document.getElementById('info-field');
-        const type = this.value;
+    // Получаем элементы
+    const questionTypeSelect = document.getElementById('question-type');
+    const contextTextField = document.getElementById('context-text-field');
+    const taskTextField = document.getElementById('task-text-field');
+    const optionsField = document.getElementById('options-field');
+    const infoField = document.getElementById('info-field');
 
-        // Показываем task_text для short-answer, checkbox, match
-        if (['short-answer', 'checkbox', 'match'].includes(type)) {
+    // Функция обновления видимости полей
+    function updateFields() {
+        const type = questionTypeSelect.value;
+
+        // Показываем task_text для input, contextual-input, single, multiple, matching
+        if (['input', 'contextual-input', 'single', 'multiple', 'matching'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
             taskTextField.classList.add('hidden');
         }
 
-        // Показываем options для checkbox, match
-        if (['checkbox', 'match'].includes(type)) {
+        // Показываем context_text только для contextual-input
+        if (type === 'contextual-input') {
+            contextTextField.classList.remove('hidden');
+        } else {
+            contextTextField.classList.add('hidden');
+        }
+
+        // Показываем options для multiple, matching
+        if (['multiple', 'matching'].includes(type)) {
             optionsField.classList.remove('hidden');
         } else {
             optionsField.classList.add('hidden');
         }
 
-        // Показываем info для textarea
+        // Показываем info только для textarea
         if (type === 'textarea') {
             infoField.classList.remove('hidden');
         } else {
             infoField.classList.add('hidden');
         }
-    });
+    }
 
-    // Запускаем при загрузке, чтобы правильно отобразить текущие поля
-    document.addEventListener('DOMContentLoaded', function () {
-        const event = new Event('change');
-        document.getElementById('question-type').dispatchEvent(event);
-    });
+    // Обработчик изменения типа
+    questionTypeSelect.addEventListener('change', updateFields);
+
+    // Запускаем при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateFields);
 </script>
 {% endblock %}

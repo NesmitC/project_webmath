@@ -58,12 +58,6 @@
                 <input type="text" name="correct_answer" class="border p-2 w-full rounded" required>
             </div>
 
-            <!-- Доп. инфо (для сочинения) -->
-            <div id="info-field" class="mb-4 hidden">
-                <label class="block font-medium mb-2">Доп. информация</label>
-                <input type="text" name="info" class="border p-2 w-full rounded"
-                    placeholder="Ответ должен быть не менее 150 слов">
-            </div>
 
             <div class="flex space-x-4">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
@@ -83,13 +77,20 @@
         const taskTextField = document.getElementById('task-text-field');
         const optionsField = document.getElementById('options-field');
         const infoField = document.getElementById('info-field');
+        const contextTextField = document.getElementById('context-text-field');
 
         const type = this.value;
 
-        if (['input', 'single', 'multiple', 'matching'].includes(type)) {
+        if (['input', 'single', 'multiple', 'matching', 'contextual-input'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
             taskTextField.classList.add('hidden');
+        }
+
+        if (type === 'contextual-input') {
+            contextTextField.classList.remove('hidden');
+        } else {
+            contextTextField.classList.add('hidden');
         }
 
         if (['multiple', 'match'].includes(type)) {

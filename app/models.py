@@ -30,6 +30,7 @@ class Question(db.Model):
     __tablename__ = 'question'
     id = db.Column(db.Integer, primary_key=True)
     question_number = db.Column(db.Integer, nullable=False)
+    context_text = db.Column(db.Text)
     question_type = db.Column(db.String(50), nullable=False)
     task_text = db.Column(db.Text)
     question_text = db.Column(db.Text, nullable=False)
