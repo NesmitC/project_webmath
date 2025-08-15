@@ -16,11 +16,19 @@
                 <label class="block font-medium mb-2">Тип вопроса</label>
                 <select name="question_type" class="border p-2 w-full rounded" id="question-type">
                     <option value="input">Ответ текстом</option>
-                    <option value="short-answer">Краткий ответ (одно поле)</option>
-                    <option value="checkbox">Выбор нескольких</option>
-                    <option value="match">Установить соответствие</option>
+                    <option value="contextual-input">Задание с текстом (ЕГЭ-стиль)</option>
+                    <option value="single">Краткий ответ (одно поле)</option>
+                    <option value="multiple">Выбор нескольких</option> <!-- ← важно! -->
+                    <option value="matching">Установить соответствие</option>
                     <option value="textarea">Сочинение</option>
                 </select>
+            </div>
+
+            <!-- Текст для анализа -->
+            <div id="context-text-field" class="mb-4 hidden">
+                <label class="block font-medium mb-2">Текст для анализа</label>
+                <textarea name="context_text" class="border p-2 w-full rounded" rows="6"
+                    placeholder="Вставьте текст, как в КИМе..."></textarea>
             </div>
 
             <!-- Общий текст задания (для short-answer, checkbox, match) -->
@@ -40,7 +48,8 @@
             <!-- Варианты (для checkbox, match) -->
             <div id="options-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Варианты (через |)</label>
-                <input type="text" name="options" class="border p-2 w-full rounded" placeholder="опция1|опция2|...">
+                <input type="text" name="options" class="border p-2 w-full rounded"
+                    placeholder="1) опция1; 2) опция2; 3) опция3">
             </div>
 
             <!-- Правильный ответ -->
@@ -77,13 +86,13 @@
 
         const type = this.value;
 
-        if (['short-answer', 'checkbox', 'match'].includes(type)) {
+        if (['input', 'single', 'multiple', 'matching'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
             taskTextField.classList.add('hidden');
         }
 
-        if (['checkbox', 'match'].includes(type)) {
+        if (['multiple', 'match'].includes(type)) {
             optionsField.classList.remove('hidden');
         } else {
             optionsField.classList.add('hidden');

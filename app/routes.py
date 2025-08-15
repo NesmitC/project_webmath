@@ -148,7 +148,14 @@ def question(question_index):
 # --- ОТПРАВКА ВСЕГО ТЕСТА ---
 @main.route('/submit-test', methods=['POST'])
 @login_required
-def submit_full_test():
+def submit_test():
+    # Получаем список вопросов с типом "multiple"
+    answers_multiple = {}
+    for key, values in request.form.lists():  # lists возвращает словарь списков значений
+        if key.startswith("answer_") and key.endswith("[]"):  # проверяем только multiple-типы
+            question_id = int(key.replace("answer_", "").replace("[]", ""))
+            answers_multiple[question_id] = sorted(list(values))  # сортировка гарантирует порядок
+
     test_id = request.form['test_id']
     test = Test.query.get_or_404(test_id)
     questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
@@ -164,13 +171,12 @@ def submit_full_test():
         elif q.question_type == 'single':
             user_answer = request.form.get(f'answer_{q.id}', '').strip()
         elif q.question_type == 'multiple':
-            # Собираем все значения checkbox
-            answers = [v.strip() for k, v in request.form.items() if k.startswith(f'answer_{q.id}_')]
-            user_answer = '; '.join(answers)
+            # Собираем все отмеченные чекбоксы
+            answers = answers_multiple.get(q.id, [])
+            user_answer = '; '.join(sorted(answers))
         else:
             user_answer = request.form.get(f'answer_{q.id}', '').strip()
 
-        # Сравниваем (регистронезависимо)
         is_correct = user_answer.lower() == q.correct_answer.strip().lower()
         if is_correct:
             correct += 1
@@ -182,6 +188,8 @@ def submit_full_test():
         })
 
     return render_template('result.html', results=results, correct=correct, total=len(questions))
+
+
 
 
 @main.route('/result')
@@ -288,20 +296,6 @@ def logout():
     flash("Вы вышли из системы.")
     return redirect(url_for('main.index'))
 
-# ---------------------------------------------------------------------
-@main.route('/submit-test', methods=['POST'])
-@login_required  # ← результаты тоже только для авторизованных
-def submit_test():
-    data = request.get_json()
-    result = Result(
-        user_id=session['user_id'],
-        test_type=data.get('test_type'),
-        score=data.get('score'),
-        total=data.get('total')
-    )
-    db.session.add(result)
-    db.session.commit()
-    return jsonify({"message": "Результат сохранён!"})
 
 # ---------------------------------------------------------------------
 # Создаём сериализатор

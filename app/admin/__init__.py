@@ -1,5 +1,4 @@
 # app/admin/__init__.py
-# from flask import Blueprint
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from app.models import TestType, Test, Question, User
