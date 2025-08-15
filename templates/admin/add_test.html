@@ -1,33 +1,29 @@
-<!-- templates/admin/add_test.html -->
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ru">
 
-{% block content %}
-<section class="py-12 bg-white">
-    <div class="container mx-auto px-6 max-w-2xl">
-        <h1 class="text-2xl font-bold mb-6">Создать тест: {{ test_type_name | title }} диагностика</h1>
+<head>
+    <title>Создать тест</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h2>Создать тест: {{ test_type_name }}</h2>
 
         <form method="POST">
-            <div class="mb-4">
-                <label class="block font-medium mb-2">Заголовок</label>
-                <input type="text" name="title" class="border p-2 w-full rounded" required
-                    placeholder="Например: Входящая диагностика">
+            <div class="mb-3">
+                <label>Название теста</label>
+                <input type="text" name="title" class="form-control" required>
             </div>
-
-            <div class="mb-4">
-                <label class="block font-medium mb-2">Текст задания</label>
-                <textarea name="test_text" class="border p-2 w-full rounded" rows="6" required
-                    placeholder="Например: Прочитайте текст и выполните задания 1-3"></textarea>
+            <div class="mb-3">
+                <label>Текст теста</label>
+                <textarea name="test_text" class="form-control" rows="10" required></textarea>
             </div>
-
-            <div class="flex space-x-4">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-                    Создать тест
-                </button>
-                <a href="{{ url_for('admin.index') }}" class="text-gray-600 hover:underline">
-                    Отмена
-                </a>
-            </div>
+            <button type="submit" class="btn btn-success">Создать тест</button>
         </form>
+
+        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary mt-3">← Назад</a>
     </div>
-</section>
-{% endblock %}
+</body>
+
+</html>

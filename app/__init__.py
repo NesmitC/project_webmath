@@ -59,7 +59,7 @@ def create_app():
 
     # 🔥 КЛЮЧЕВОЙ ПОРЯДОК:
     from app.admin import admin          # 1. Создаём admin
-    from app.admin import routes         # 2. Загружаем маршруты → @admin.route срабатывают
+#    from app.admin import routes         # 2. Загружаем маршруты → @admin.route срабатывают
     app.register_blueprint(admin)        # 3. Регистрируем ТОЛЬКО ПОСЛЕ всех маршрутов
 
     return app

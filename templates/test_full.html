@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-2xl font-bold mb-2">{{ test.title }}</h1>
+    <p class="text-gray-600 mb-6">{{ test.test_text }}</p>
+
+    <form method="POST" action="{{ url_for('main.submit_full_test') }}">
+        <input type="hidden" name="test_id" value="{{ test.id }}">
+
+        {% for q in questions %}
+        <div class="border-b border-gray-200 pb-6 mb-6">
+            <h3 class="font-semibold text-lg">Задание {{ q.question_number }}.</h3>
+            {% if q.task_text %}
+            <p class="text-sm text-gray-700 mb-2">{{ q.task_text }}</p>
+            {% endif %}
+            <p class="mb-3">{{ q.question_text }}</p>
+
+            <!-- Тип: input -->
+            {% if q.question_type == 'input' %}
+            <input type="text" name="answer_{{ q.id }}" class="form-control" required>
+
+            <!-- Тип: single (один из списка) -->
+            {% elif q.question_type == 'single' %}
+            {% for opt in q.options.split(';') if opt.strip() %}
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="answer_{{ q.id }}" value="{{ opt.strip() }}"
+                    id="q{{ q.id }}_opt{{ loop.index }}" required>
+                <label class="form-check-label" for="q{{ q.id }}_opt{{ loop.index }}">
+                    {{ opt.strip() }}
+                </label>
+            </div>
+            {% endfor %}
+
+            <!-- Тип: multiple (несколько) -->
+            {% elif q.question_type == 'multiple' %}
+            {% for opt in q.options.split(';') if opt.strip() %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="answer_{{ q.id }}_{{ loop.index }}"
+                    value="{{ opt.strip() }}" id="q{{ q.id }}_opt{{ loop.index }}">
+                <label class="form-check-label" for="q{{ q.id }}_opt{{ loop.index }}">
+                    {{ opt.strip() }}
+                </label>
+            </div>
+            {% endfor %}
+
+            <!-- Тип: matching (соответствие) -->
+            {% elif q.question_type == 'matching' %}
+            <p><small>Установите соответствие.</small></p>
+            <!-- Здесь можно добавить таблицу или пары -->
+
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary btn-lg">Завершить тест</button>
+    </form>
+
+    <a href="{{ url_for('main.profile') }}" class="btn btn-secondary mt-3">← Назад</a>
+</div>
+{% endblock %}

@@ -38,13 +38,11 @@ def get_test_by_type_name(test_type_name):
 @admin_required
 def select_diagnostic(diagnostic_type):
     print(f"✅ Вызван маршрут: diagnostic_type = {diagnostic_type}")  # ← отладка
-    
     type_map = {
         'incoming': 'ege_rus_incoming',
         'current': 'ege_rus_current',
         'final': 'ege_rus_final'
     }
-
     if diagnostic_type not in type_map:
         flash("❌ Неверный тип диагностики", "error")
         return redirect(url_for('admin.index'))
@@ -56,8 +54,7 @@ def select_diagnostic(diagnostic_type):
     test = Test.query.filter_by(test_type_id=test_type.id).first()
 
     return render_template(
-        'admin/manage_diagnostic.html',
-        test_type=test_type,
+        'admin/manage_diagnostic.html', test_type=test_type,
         test=test,
         diagnostic_type=diagnostic_type
     )

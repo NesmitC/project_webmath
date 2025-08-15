@@ -21,6 +21,8 @@ class Test(db.Model):
     test_text = db.Column(db.Text)
     test_type_id = db.Column(db.Integer, db.ForeignKey('test_type.id'), nullable=False)
 
+    # Связи
+    test_type = db.relationship('TestType', backref='tests')  # ✅ Обязательно!
     questions = db.relationship('Question', backref='test', lazy=True, cascade="all, delete-orphan")
 
 
