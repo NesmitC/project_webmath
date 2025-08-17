@@ -164,6 +164,14 @@ def submit_test():
     results = []
 
     for q in questions:
+    # Пропускаем информационные блоки
+        if q.question_type == 'info':
+            continue
+
+    user_answer = None
+    # ... обработка остальных типов
+
+    for q in questions:
         user_answer = None
 
         if q.question_type == 'input':
@@ -174,6 +182,20 @@ def submit_test():
             # Собираем все отмеченные чекбоксы
             answers = answers_multiple.get(q.id, [])
             user_answer = '; '.join(sorted(answers))
+        elif q.question_type == 'matching':
+            # Собираем все select с именем answer_{q.id}_X
+            answers = []
+            for i in range(10):  # максимум 10 пар
+                val = request.form.get(f'answer_{q.id}_{i}')
+                if val:
+                    answers.append(f"{chr(65 + i)}-{val}")  # A-1, B-2...
+                else:
+                    answers.append(f"{chr(65 + i)}-?")  # если не выбрано
+
+            user_answer = ', '.join(answers)
+
+            # Убираем "X-?" из строки, если нужно
+            user_answer_clean = ', '.join([a for a in answers if not a.endswith('-?')])
         else:
             user_answer = request.form.get(f'answer_{q.id}', '').strip()
 
@@ -186,6 +208,16 @@ def submit_test():
             'user_answer': user_answer,
             'is_correct': is_correct
         })
+
+        # Удаляем пробелы и приводим к одному формату
+    def normalize_matching(answer):
+        pairs = [p.strip().upper() for p in answer.split(',')]
+        return ', '.join(sorted(pairs))
+
+    user_answer_normalized = normalize_matching(user_answer_clean)
+    correct_answer_normalized = normalize_matching(q.correct_answer.strip())
+
+    is_correct = user_answer_normalized == correct_answer_normalized
 
     return render_template('result.html', results=results, correct=correct, total=len(questions))
 

@@ -9,7 +9,8 @@
         <form method="POST">
             <div class="mb-4">
                 <label class="block font-medium mb-2">Номер вопроса</label>
-                <input type="number" name="question_number" class="border p-2 w-full rounded" required min="1" max="27">
+                <input type="number" name="question_number" id="question-number" class="border p-2 w-full rounded"
+                    min="1" max="230">
             </div>
 
             <div class="mb-4">
@@ -21,6 +22,7 @@
                     <option value="multiple">Выбор нескольких</option> <!-- ← важно! -->
                     <option value="matching">Установить соответствие</option>
                     <option value="textarea">Сочинение</option>
+                    <option value="info">Информационный блок (текст)</option>
                 </select>
             </div>
 
@@ -45,17 +47,28 @@
                     placeholder="Например: опытные КОНСТРУКТОРЫ"></textarea>
             </div>
 
-            <!-- Варианты (для checkbox, match) -->
-            <div id="options-field" class="mb-4 hidden">
+            <!-- Варианты (для multiple, matching) -->
+            <div id="options-field-multiple" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Варианты (через |)</label>
                 <input type="text" name="options" class="border p-2 w-full rounded"
                     placeholder="1) опция1; 2) опция2; 3) опция3">
             </div>
 
+            <!-- Варианты (для matching) -->
+            <div id="options-field-matching" class="mb-4 hidden">
+                <label class="block font-medium mb-2">Варианты (через ||)</label>
+                <textarea name="options" class="border p-2 w-full rounded" rows="30"
+                    placeholder="А) текст|Б) текст||1) текст|2) текст|3) текст">
+    </textarea>
+                <p class="text-sm text-gray-500 mt-1">
+                    Левый блок (А, Б, В...) и правый блок (1, 2, 3...) разделены <strong>||</strong>
+                </p>
+            </div>
+
             <!-- Правильный ответ -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Правильный ответ</label>
-                <input type="text" name="correct_answer" class="border p-2 w-full rounded" required>
+                <input type="text" name="correct_answer" id="correct-answer" class="border p-2 w-full rounded">
             </div>
 
 
@@ -75,12 +88,14 @@
 <script>
     document.getElementById('question-type').addEventListener('change', function () {
         const taskTextField = document.getElementById('task-text-field');
-        const optionsField = document.getElementById('options-field');
+        const optionsFieldMultiple = document.getElementById('options-field-multiple');
+        const optionsFieldMatching = document.getElementById('options-field-matching');
         const infoField = document.getElementById('info-field');
         const contextTextField = document.getElementById('context-text-field');
 
         const type = this.value;
 
+        // Показать/скрыть поля
         if (['input', 'single', 'multiple', 'matching', 'contextual-input'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
@@ -93,17 +108,45 @@
             contextTextField.classList.add('hidden');
         }
 
-        if (['multiple', 'match'].includes(type)) {
-            optionsField.classList.remove('hidden');
+        if (type === 'multiple') {
+            optionsFieldMultiple.classList.remove('hidden');
+            optionsFieldMatching.classList.add('hidden');
+        } else if (type === 'matching') {
+            optionsFieldMultiple.classList.add('hidden');
+            optionsFieldMatching.classList.remove('hidden');
         } else {
-            optionsField.classList.add('hidden');
+            optionsFieldMultiple.classList.add('hidden');
+            optionsFieldMatching.classList.add('hidden');
         }
 
-        if (type === 'textarea') {
+        if (type === 'textarea' || type === 'info') {
             infoField.classList.remove('hidden');
         } else {
             infoField.classList.add('hidden');
         }
+
+        // Управлять required
+        const questionNumber = document.getElementById('question-number');
+        const correctAnswer = document.getElementById('correct-answer');
+
+        function updateRequired() {
+            const type = questionType.value;
+            if (type === 'info') {
+                questionNumber.removeAttribute('required');
+                correctAnswer.removeAttribute('required');
+            } else {
+                questionNumber.setAttribute('required', 'required');
+                correctAnswer.setAttribute('required', 'required');
+            }
+        }
+
+        // Вызов при изменении типа
+        questionType.addEventListener('change', updateRequired);
+        document.addEventListener('DOMContentLoaded', updateRequired);
+
+        // Вызов при изменении типа
+        questionType.addEventListener('change', updateRequired);
+        document.addEventListener('DOMContentLoaded', updateRequired);
     });
 </script>
 {% endblock %}

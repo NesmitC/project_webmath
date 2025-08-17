@@ -4,26 +4,26 @@
 {% block title %}Просмотр теста | Админка{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">{{ test_type.name | title }} диагностика</h1>
+<h1 class="text-2xl font-bold mb-4">{{ test_type.title }}</h1>
 
 <!-- Кнопка редактирования текста теста -->
 <a href="{{ url_for('admin.edit_test', test_type_name=test_type.name) }}"
-    class="inline-block mb-6 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm">
+    class="inline-block mb-6 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm transition">
     ✏️ Редактировать текст теста
 </a>
 
 <!-- Текст задания -->
 <div class="bg-white p-4 rounded border mb-6">
-    <h2 class="font-semibold mb-2">Текст задания</h2>
+    <h2 class="font-semibold mb-2">Текст теста</h2>
     <p class="text-sm leading-relaxed whitespace-pre-wrap">{{ test.test_text }}</p>
 </div>
 
-<!-- Список вопросов с кнопками редактирования -->
+<!-- Список вопросов -->
 <h2 class="text-xl font-semibold mb-4">Вопросы</h2>
 <div class="space-y-4">
     {% for q in test.questions %}
-    <div class="bg-gray-50 p-4 rounded flex justify-between items-start gap-4">
-        <div class="flex-1">
+    <div class="bg-gray-50 p-4 rounded flex flex-col gap-3">
+        <div>
             <p class="font-medium">
                 <strong>{{ q.question_number }}.</strong> {{ q.question_text }}
             </p>
@@ -31,28 +31,50 @@
                 <strong>Тип:</strong> {{ q.question_type }} |
                 <strong>Ответ:</strong> {{ q.correct_answer }}
             </p>
-            {% if q.options %}
-            <p class="text-xs text-gray-500 mt-1">
-                <strong>Варианты:</strong> {{ q.options }}
-            </p>
-            {% endif %}
-            {% if q.info %}
-            <p class="text-xs text-gray-500 mt-1">
-                <strong>Инфо:</strong> {{ q.info }}
-            </p>
-            {% endif %}
         </div>
-        <div class="flex-shrink-0 space-y-2">
-            <!-- Кнопка редактирования вопроса -->
+
+        <!-- Текст для анализа (для contextual-input) -->
+        {% if q.question_type == 'contextual-input' and q.context_text %}
+        <div class="bg-blue-50 border border-blue-200 p-3 rounded">
+            <h4 class="font-semibold text-blue-800 text-sm mb-1">Текст для анализа:</h4>
+            <p class="text-blue-700 text-sm whitespace-pre-wrap leading-relaxed">{{ q.context_text }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Формулировка задания -->
+        {% if q.task_text %}
+        <div class="bg-indigo-50 border border-indigo-200 p-3 rounded">
+            <h4 class="font-semibold text-indigo-800 text-sm mb-1">Формулировка задания:</h4>
+            <p class="text-indigo-700 text-sm">{{ q.task_text }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Варианты (для multiple, matching) -->
+        {% if q.options %}
+        <div class="bg-amber-50 border border-amber-200 p-3 rounded">
+            <h4 class="font-semibold text-amber-800 text-sm mb-1">Варианты:</h4>
+            <p class="text-amber-700 text-sm">{{ q.options }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Доп. информация (например, для сочинения) -->
+        {% if q.info %}
+        <div class="bg-green-50 border border-green-200 p-3 rounded">
+            <h4 class="font-semibold text-green-800 text-sm mb-1">Доп. информация:</h4>
+            <p class="text-green-700 text-sm">{{ q.info }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Кнопки действий -->
+        <div class="flex gap-3 mt-2">
             <a href="{{ url_for('admin.edit_question', question_id=q.id) }}"
-                class="block text-yellow-600 hover:text-yellow-800 hover:underline text-sm font-medium">
+                class="text-yellow-600 hover:text-yellow-800 hover:underline text-sm font-medium transition">
                 ✏️ Редактировать
             </a>
-
         </div>
     </div>
     {% else %}
-    <p class="text-gray-500">Нет вопросов.</p>
+    <p class="text-gray-500">Нет вопросов. Добавьте первый с помощью кнопки ниже.</p>
     {% endfor %}
 </div>
 

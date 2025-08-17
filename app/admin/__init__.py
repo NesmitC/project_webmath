@@ -99,14 +99,17 @@ def add_question(test_type_name):
         return redirect(url_for('admin.index'))
 
     if request.method == 'POST':
+        question_number = request.form.get('question_number')
+
         question = Question(
-            question_number=int(request.form['question_number']),
+            question_number=int(question_number) if question_number else None,
             question_type=request.form['question_type'],
             task_text=request.form.get('task_text'),
             question_text=request.form['question_text'],
             options=request.form.get('options'),
-            correct_answer=request.form['correct_answer'],
+            correct_answer=request.form.get('correct_answer', ''),
             info=request.form.get('info'),
+            context_text=request.form.get('context_text'),
             test_id=test.id
         )
         db.session.add(question)
@@ -130,6 +133,7 @@ def edit_question(question_id):
         question.correct_answer = request.form['correct_answer']
         question.options = request.form.get('options')
         question.info = request.form.get('info')
+        question.context_text = request.form.get('context_text')
         
         db.session.commit()
         flash("✅ Вопрос обновлён")

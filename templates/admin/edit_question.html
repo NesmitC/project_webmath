@@ -10,7 +10,7 @@
             <div class="mb-4">
                 <label class="block font-medium mb-2">Номер вопроса</label>
                 <input type="number" name="question_number" value="{{ question.question_number }}"
-                    class="border p-2 w-full rounded" required min="1" max="27">
+                    class="border p-2 w-full rounded" required min="1" max="230">
             </div>
 
             <div class="mb-4">
@@ -35,6 +35,7 @@
                     <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>
                         Сочинение
                     </option>
+                    <option value="info">Информационный блок (текст)</option>
                 </select>
             </div>
 
@@ -59,11 +60,15 @@
                     placeholder="Например: опытные КОНСТРУКТОРЫ">{{ question.question_text }}</textarea>
             </div>
 
-            <!-- Варианты (для multiple, matching) -->
+            <!-- Варианты (для matching) -->
             <div id="options-field" class="mb-4 hidden">
-                <label class="block font-medium mb-2">Варианты (через |)</label>
-                <input type="text" name="options" value="{{ question.options or '' }}" class="border p-2 w-full rounded"
-                    placeholder="1) опция1; 2) опция2; 3) опция3">
+                <label class="block font-medium mb-2">Варианты (через ||)</label>
+                <textarea name="options" class="border p-2 w-full rounded" rows="30"
+                    placeholder="А) текст|Б) текст||1) текст|2) текст|3) текст">
+    </textarea>
+                <p class="text-sm text-gray-500 mt-1">
+                    Левый блок (А, Б, В...) и правый блок (1, 2, 3...) разделены <strong>||</strong>
+                </p>
             </div>
 
             <!-- Правильный ответ -->
@@ -126,11 +131,9 @@
             optionsField.classList.add('hidden');
         }
 
-        // Показываем info только для textarea
-        if (type === 'textarea') {
+
+        if (['textarea', 'info'].includes(type)) {
             infoField.classList.remove('hidden');
-        } else {
-            infoField.classList.add('hidden');
         }
     }
 
