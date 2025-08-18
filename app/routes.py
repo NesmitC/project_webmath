@@ -10,6 +10,8 @@ from functools import wraps
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 from app import db, mail
+import re
+from app.utils.primary_to_secondary import get_secondary_score
 
 
 main = Blueprint('main', __name__)
@@ -144,85 +146,159 @@ def question(question_index):
         total=len(questions)
     )
 
+# ==================================================================
 
-# --- ОТПРАВКА ВСЕГО ТЕСТА ---
+
+# Паттерн: только кириллица и цифры, длина 1–50
+CYRILLIC_DIGITS_ONLY = re.compile(r'^[0-9а-яА-ЯёЁ]{1,50}$')
+
 @main.route('/submit-test', methods=['POST'])
 @login_required
 def submit_test():
-    # Получаем список вопросов с типом "multiple"
-    answers_multiple = {}
-    for key, values in request.form.lists():  # lists возвращает словарь списков значений
-        if key.startswith("answer_") and key.endswith("[]"):  # проверяем только multiple-типы
-            question_id = int(key.replace("answer_", "").replace("[]", ""))
-            answers_multiple[question_id] = sorted(list(values))  # сортировка гарантирует порядок
-
     test_id = request.form['test_id']
     test = Test.query.get_or_404(test_id)
     questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
 
-    correct = 0
+    total_score = 0
     results = []
-
-    for q in questions:
-    # Пропускаем информационные блоки
-        if q.question_type == 'info':
-            continue
-
-    user_answer = None
-    # ... обработка остальных типов
 
     for q in questions:
         user_answer = None
 
-        if q.question_type == 'input':
+        # --- Типы с текстовым ответом: input, single, contextual-input ---
+        if q.question_type in ['input', 'single', 'contextual-input']:
             user_answer = request.form.get(f'answer_{q.id}', '').strip()
-        elif q.question_type == 'single':
-            user_answer = request.form.get(f'answer_{q.id}', '').strip()
-        elif q.question_type == 'multiple':
-            # Собираем все отмеченные чекбоксы
-            answers = answers_multiple.get(q.id, [])
-            user_answer = '; '.join(sorted(answers))
+
+            # Проверка: не пусто и только кириллица + цифры
+            if not user_answer:
+                flash(f"❌ Задание {q.question_number}: ответ не может быть пустым.", "error")
+                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+
+            if not CYRILLIC_DIGITS_ONLY.match(user_answer):
+                flash(f"❌ Задание {q.question_number}: разрешены только цифры и кириллица (1–50 символов).", "error")
+                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+
+        # --- Типы с множественным выбором ---
+        elif q.question_type in ['multiple', 'contextual-multiple']:
+            answers = request.form.getlist(f'answer_{q.id}')
+            cleaned = sorted([a.strip() for a in answers if a.strip()])
+            user_answer = '; '.join(cleaned)
+
+        # --- Установите соответствие ---
         elif q.question_type == 'matching':
-            # Собираем все select с именем answer_{q.id}_X
             answers = []
             for i in range(10):  # максимум 10 пар
                 val = request.form.get(f'answer_{q.id}_{i}')
                 if val:
-                    answers.append(f"{chr(65 + i)}-{val}")  # A-1, B-2...
+                    answers.append(f"{chr(65 + i)}-{val}")
                 else:
-                    answers.append(f"{chr(65 + i)}-?")  # если не выбрано
+                    answers.append(f"{chr(65 + i)}-?")
 
             user_answer = ', '.join(answers)
 
-            # Убираем "X-?" из строки, если нужно
-            user_answer_clean = ', '.join([a for a in answers if not a.endswith('-?')])
+            # Нормализация для сравнения
+            def normalize_matching(answer_str):
+                pairs = [p.strip().upper() for p in answer_str.split(',') if p.strip()]
+                return ', '.join(sorted(pairs))
+
+            user_answer_normalized = normalize_matching(user_answer)
+            correct_answer_normalized = normalize_matching(q.correct_answer.strip())
+
+            is_correct = user_answer_normalized == correct_answer_normalized
+            points = 1 if is_correct else 0
+
+            total_score += points
+            results.append({
+                'question': q,
+                'user_answer': user_answer,
+                'is_correct': is_correct,
+                'points': points,
+                'max_points': 1
+            })
+            continue  # пропускаем общую логику
+
+        # --- Все остальные типы ---
         else:
             user_answer = request.form.get(f'answer_{q.id}', '').strip()
 
-        is_correct = user_answer.lower() == q.correct_answer.strip().lower()
-        if is_correct:
-            correct += 1
+        # --- Проверка правильности и начисление баллов ---
+        points = 0
+        max_points = 1
+        correct_answer_clean = q.correct_answer.strip() if q.correct_answer else ""
+
+        if user_answer and correct_answer_clean:
+            # 🔢 Если ответ состоит только из цифр
+            if user_answer.isdigit() and correct_answer_clean.isdigit():
+                user_set = set(user_answer)
+                correct_set = set(correct_answer_clean)
+
+                # Задания 8 и 22 — особая система баллов
+                if q.question_number in [8, 22]:
+                    max_points = 2
+                    matches = len(user_set & correct_set)  # пересечение
+                    if matches == 5:
+                        points = 2
+                    elif matches >= 3:
+                        points = 1
+                    else:
+                        points = 0
+                # Остальные цифровые задания — 1 балл за совпадение состава цифр
+                else:
+                    points = 1 if sorted(user_answer) == sorted(correct_answer_clean) else 0
+
+            # 📝 Текстовые ответы (поддержка нескольких вариантов через |)
+            else:
+                user_clean = user_answer.strip().lower()
+                # Разбиваем правильные ответы по | и приводим к нижнему регистру
+                correct_options = [opt.strip().lower() for opt in correct_answer_clean.split('|') if opt.strip()]
+                # Если пользовательский ответ совпадает с любым из правильных — засчитываем
+                if user_clean in correct_options:
+                    points = 1
+                else:
+                    points = 0
+
+        else:
+            points = 0  # пустой ответ
+
+        # --- Обработка балла за сочинение ---
+        essay_score = request.form.get('essay_score', '').strip()
+        essay_points = 0
+
+        if essay_score.isdigit():
+            score = int(essay_score)
+            if 0 <= score <= 22:
+                essay_points = score
+            else:
+                flash("❌ Балл за сочинение должен быть от 0 до 22.", "error")
+                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+        else:
+            flash("❌ Балл за сочинение должен быть цифрой от 0 до 22.", "error")
+            return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+
+        total_score += essay_points
 
         results.append({
             'question': q,
             'user_answer': user_answer,
-            'is_correct': is_correct
+            'is_correct': points > 0,
+            'points': points,
+            'max_points': max_points
         })
 
-        # Удаляем пробелы и приводим к одному формату
-    def normalize_matching(answer):
-        pairs = [p.strip().upper() for p in answer.split(',')]
-        return ', '.join(sorted(pairs))
+    # Общее баллы, вторичные
+    total_questions = len([r for r in results if r['max_points'] > 0])
+    primary_total = total_score  # Это сумма всех баллов (включая essay_score)
+    secondary_total = get_secondary_score(primary_total)
 
-    user_answer_normalized = normalize_matching(user_answer_clean)
-    correct_answer_normalized = normalize_matching(q.correct_answer.strip())
+    return render_template(
+        'result.html', 
+        results=results, 
+        correct=primary_total, 
+        secondary=secondary_total, 
+        essay_points=essay_points)
 
-    is_correct = user_answer_normalized == correct_answer_normalized
 
-    return render_template('result.html', results=results, correct=correct, total=len(questions))
-
-
-
+# ==================================================================
 
 @main.route('/result')
 def result():

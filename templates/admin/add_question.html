@@ -21,8 +21,8 @@
                     <option value="single">Краткий ответ (одно поле)</option>
                     <option value="multiple">Выбор нескольких</option> <!-- ← важно! -->
                     <option value="matching">Установить соответствие</option>
+                    <option value="contextual-multiple">Контекст + выбор нескольких</option>
                     <option value="textarea">Сочинение</option>
-                    <option value="info">Информационный блок (текст)</option>
                 </select>
             </div>
 
@@ -37,14 +37,14 @@
             <div id="task-text-field" class="mb-4 hidden">
                 <label class="block font-medium mb-2">Текст задания (общий)</label>
                 <textarea name="task_text" class="border p-2 w-full rounded" rows="3"
-                    placeholder="Например: В одном из слов допущена ошибка..."></textarea>
+                    placeholder="Вопрос сверху задания"></textarea>
             </div>
 
             <!-- Конкретный вопрос -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Текст вопроса</label>
-                <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
-                    placeholder="Например: опытные КОНСТРУКТОРЫ"></textarea>
+                <textarea name="question_text" class="border p-2 w-full rounded" rows="3"
+                    placeholder="Вопрос снизу задания"></textarea>
             </div>
 
             <!-- Варианты (для multiple, matching) -->
@@ -65,10 +65,18 @@
                 </p>
             </div>
 
+            <!-- Поле для контекста -->
+            <div id="context-field" class="mb-4 hidden">
+                <label class="block font-medium mb-2">Текст для анализа (контекст)</label>
+                <textarea name="context_text" class="border p-2 w-full rounded" rows="4"
+                    placeholder="Введите текст, на основе которого будут задания..."></textarea>
+            </div>
+
             <!-- Правильный ответ -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Правильный ответ</label>
-                <input type="text" name="correct_answer" id="correct-answer" class="border p-2 w-full rounded">
+                <input type="text" name="correct_answer" id="correct-answer" class="border p-2 w-full rounded"
+                    placeholder="напр. 145 (без запятых)">
             </div>
 
 
@@ -86,67 +94,70 @@
 </section>
 
 <script>
-    document.getElementById('question-type').addEventListener('change', function () {
-        const taskTextField = document.getElementById('task-text-field');
-        const optionsFieldMultiple = document.getElementById('options-field-multiple');
-        const optionsFieldMatching = document.getElementById('options-field-matching');
-        const infoField = document.getElementById('info-field');
-        const contextTextField = document.getElementById('context-text-field');
+    const questionType = document.getElementById('question-type');
+    const taskTextField = document.getElementById('task-text-field');
+    const optionsFieldMultiple = document.getElementById('options-field-multiple');
+    const optionsFieldMatching = document.getElementById('options-field-matching');
+    const contextTextField = document.getElementById('context-text-field');
+    const questionNumber = document.getElementById('question-number');
+    const correctAnswer = document.getElementById('correct-answer');
 
-        const type = this.value;
+    // Функция обновления видимости полей
+    function updateFields() {
+        const type = questionType.value;
 
-        // Показать/скрыть поля
-        if (['input', 'single', 'multiple', 'matching', 'contextual-input'].includes(type)) {
+        // Показать task_text для всех типов, кроме textarea
+        if (['input', 'single', 'multiple', 'matching', 'contextual-input', 'contextual-multiple'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
             taskTextField.classList.add('hidden');
         }
 
-        if (type === 'contextual-input') {
+        // Показать context_text только для contextual-input и contextual-multiple
+        if (['contextual-input', 'contextual-multiple'].includes(type)) {
             contextTextField.classList.remove('hidden');
         } else {
             contextTextField.classList.add('hidden');
         }
 
+        // Варианты: multiple
         if (type === 'multiple') {
             optionsFieldMultiple.classList.remove('hidden');
             optionsFieldMatching.classList.add('hidden');
-        } else if (type === 'matching') {
+        }
+        // Варианты: matching
+        else if (type === 'matching') {
             optionsFieldMultiple.classList.add('hidden');
             optionsFieldMatching.classList.remove('hidden');
-        } else {
+        }
+        // Варианты: contextual-multiple
+        else if (type === 'contextual-multiple') {
+            optionsFieldMultiple.classList.remove('hidden');
+            optionsFieldMatching.classList.add('hidden');
+        }
+        // Все остальные
+        else {
             optionsFieldMultiple.classList.add('hidden');
             optionsFieldMatching.classList.add('hidden');
         }
 
-        if (type === 'textarea' || type === 'info') {
-            infoField.classList.remove('hidden');
+        // Управление required: textarea и contextual-типы могут быть без correct_answer?
+        // Но в твоей логике: все, кроме info, требуют correct_answer → оставим
+        if (type === 'textarea') {
+            correctAnswer.removeAttribute('required');
         } else {
-            infoField.classList.add('hidden');
+            correctAnswer.setAttribute('required', 'required');
         }
 
-        // Управлять required
-        const questionNumber = document.getElementById('question-number');
-        const correctAnswer = document.getElementById('correct-answer');
+        // question_number всегда required
+        questionNumber.setAttribute('required', 'required');
+    }
 
-        function updateRequired() {
-            const type = questionType.value;
-            if (type === 'info') {
-                questionNumber.removeAttribute('required');
-                correctAnswer.removeAttribute('required');
-            } else {
-                questionNumber.setAttribute('required', 'required');
-                correctAnswer.setAttribute('required', 'required');
-            }
-        }
+    // Назначаем обработчик
+    questionType.addEventListener('change', updateFields);
 
-        // Вызов при изменении типа
-        questionType.addEventListener('change', updateRequired);
-        document.addEventListener('DOMContentLoaded', updateRequired);
-
-        // Вызов при изменении типа
-        questionType.addEventListener('change', updateRequired);
-        document.addEventListener('DOMContentLoaded', updateRequired);
-    });
+    // Вызываем при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateFields);
 </script>
+
 {% endblock %}

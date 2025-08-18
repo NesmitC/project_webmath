@@ -19,10 +19,13 @@
             {% endif %}
             {% if q.context_text %}
             <div class="context-block mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-                <h4 class="font-semibold text-blue-800 mb-2">Текст для анализа:</h4>
+                <!-- <h4 class="font-semibold text-blue-800 mb-2">Текст для анализа:</h4> -->
                 <p class="text-blue-700 whitespace-pre-wrap text-sm leading-relaxed">{{ q.context_text }}</p>
             </div>
             {% endif %}
+            <!-- Текст вопроса -->
+            <p class="question-text mb-3">{{ q.question_text }}</p>
+
             <input type="text" name="answer_{{ q.id }}" class="form-control w-full border p-2 rounded"
                 placeholder="Ваш ответ.." required>
 
@@ -33,7 +36,8 @@
             {% endif %}
             <p class="question-text mb-3">{{ q.question_text }}</p>
             <input type="text" name="answer_{{ q.id }}" class="form-control w-full border p-2 rounded"
-                placeholder="Ваш ответ.." required>
+                placeholder="Ваш ответ.." pattern="[0-9а-яА-ЯёЁ]{1,50}" maxlength="50"
+                title="Только цифры и кириллица, от 1 до 50 символов" required>
 
             <!-- Тип: single (один из списка) -->
             {% elif q.question_type == 'single' %}
@@ -107,30 +111,47 @@
             </div>
             {% endif %}
 
-            <!-- Тип: info (информационный блок) -->
-            {% elif q.question_type == 'info' %}
-            <div class="info-block bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
-                <h3 class="font-semibold text-lg text-gray-800 mb-3">
-                    📖 Прочитайте текст и выполните задания 23–27.
-                </h3>
-                {% if q.task_text %}
-                <p class="task-instruction text-sm text-gray-700 mb-3">{{ q.task_text }}</p>
-                {% endif %}
-                <div class="text-content text-gray-800 leading-relaxed whitespace-pre-wrap">
-                    {{ q.question_text | replace('\n', '<br>') | safe }}
-                </div>
+            <!-- Тип: contextual-multiple -->
+            {% elif q.question_type == 'contextual-multiple' %}
+            {% if q.task_text %}
+            <p class="task-instruction font-medium text-gray-800 mb-3">{{ q.task_text }}</p>
+            {% endif %}
+            {% if q.context_text %}
+            <div class="context-block mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                <h4 class="font-semibold text-blue-800 mb-2">Текст для анализа:</h4>
+                <p class="text-blue-700 whitespace-pre-wrap text-sm leading-relaxed">
+                    {{ q.context_text }}
+                </p>
             </div>
-
+            {% endif %}
+            <p class="question-text mb-3">{{ q.question_text }}</p>
+            {% for opt in q.options.split('|') if opt.strip() %}
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" name="answer_{{ q.id }}" value="{{ opt.strip() }}"
+                    id="q{{ q.id }}_opt{{ loop.index }}">
+                <label class="form-check-label" for="q{{ q.id }}_opt{{ loop.index }}">
+                    {{ opt.strip() }}
+                </label>
+            </div>
+            {% endfor %}
 
             {% else %}
-            <p class="text-muted text-red-600">Тип вопроса не поддерживается.</p>
+            <p class="text-muted text-red-600">Тип вопроса не поддерживается: {{ q.question_type }}</p>
             {% endif %}
         </div>
-
         {% endfor %}
 
+        <!-- ✅ Задание 27: Балл за сочинение — ВНЕ цикла -->
+        <div class="border-t-2 pt-6 mt-6">
+            <h3 class="font-semibold text-lg">Задание 27.</h3>
+            <p class="mb-3">Введите балл за сочинение (по шкале 0–22). Можно указать средний балл.</p>
+            <input type="number" name="essay_score" class="form-control w-full border p-2 rounded"
+                placeholder="Введите балл (0–22)" min="0" max="22" required>
+        </div>
+
+        <!-- Кнопка отправки -->
         <button type="submit"
-            class="btn btn-primary btn-lg px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            class="btn btn-primary btn-lg px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-6">
             Завершить тест
         </button>
     </form>

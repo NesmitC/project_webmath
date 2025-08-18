@@ -3,25 +3,49 @@
 
 {% block content %}
 <div class="container">
-    <h2 class="text-center mb-4">Результат теста</h2>
-    <div class="alert alert-success text-center">
-        Вы правильно ответили на <strong>{{ correct }} из {{ total }}</strong> вопросов
+    <h1 class="text-2xl font-bold mb-6">РЕЗУЛЬТАТЫ</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow mb-6">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-gray-300">
+                    <th class="pb-3 font-semibold">Вопрос</th>
+                    <th class="pb-3 font-semibold">Балл</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in results %}
+                <tr class="border-b border-gray-200">
+                    <td class="py-2">{{ r.question.question_number }}.</td>
+                    <td class="py-2">{{ r.points }}</td>
+                </tr>
+                {% endfor %}
+                <!-- Задание 27 -->
+                <tr class="border-b border-gray-200">
+                    <td class="py-2">27.</td>
+                    <td class="py-2">{{ essay_points }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <div class="list-group mb-4">
-        {% for r in results %}
-        <div
-            class="list-group-item {% if r.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}">
-            <h6>Вопрос {{ loop.index }}: {{ r.question.question_text }}</h6>
-            <p><strong>Ваш ответ:</strong> {{ r.user_answer }}</p>
-            <p><strong>Правильный ответ:</strong> {{ r.question.correct_answer }}</p>
-            {% if r.question.info %}
-            <small class="text-muted">{{ r.question.info }}</small>
-            {% endif %}
-        </div>
-        {% endfor %}
+    <div class="text-xl font-bold text-center mb-6">
+        Всего баллов: {{ correct }}
     </div>
 
-    <a href="{{ url_for('main.examenator') }}" class="btn btn-primary">Попробовать другой тест</a>
+    <div class="text-xl font-bold text-center mt-8 mb-6 border-t pt-6">
+        Вторичный (итоговый) балл - {{ secondary }}
+    </div>
+
+    <div class="flex justify-center space-x-6">
+        <a href="{{ url_for('main.profile') }}"
+            class="btn btn-secondary bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">
+            ← В профиль
+        </a>
+        <a href="{{ url_for('main.examenator') }}"
+            class="btn btn-primary bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+            Другой тест
+        </a>
+    </div>
 </div>
 {% endblock %}

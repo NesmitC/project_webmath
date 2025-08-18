@@ -4,68 +4,72 @@
 {% block content %}
 <section class="py-12 bg-white">
     <div class="container mx-auto px-6 max-w-2xl">
-        <h1 class="text-2xl font-bold mb-6">Редактировать вопрос: {{ question.test.test_type.title }}</h1>
+        <h1 class="text-2xl font-bold mb-6">Редактировать вопрос: {{ test_type_name | title }}</h1>
 
         <form method="POST">
             <div class="mb-4">
                 <label class="block font-medium mb-2">Номер вопроса</label>
-                <input type="number" name="question_number" value="{{ question.question_number }}"
-                    class="border p-2 w-full rounded" required min="1" max="230">
+                <input type="number" name="question_number" id="question-number" class="border p-2 w-full rounded"
+                    min="1" max="230" value="{{ question.question_number }}" required>
             </div>
 
             <div class="mb-4">
                 <label class="block font-medium mb-2">Тип вопроса</label>
                 <select name="question_type" class="border p-2 w-full rounded" id="question-type">
-                    <option value="input" {% if question.question_type=='input' %}selected{% endif %}>
-                        Ответ текстом
+                    <option value="input" {% if question.question_type=='input' %}selected{% endif %}>Ответ текстом
                     </option>
                     <option value="contextual-input" {% if question.question_type=='contextual-input' %}selected{% endif
-                        %}>
-                        Задание с текстом (ЕГЭ-стиль)
+                        %}>Задание с текстом (ЕГЭ-стиль)</option>
+                    <option value="single" {% if question.question_type=='single' %}selected{% endif %}>Краткий ответ
+                        (одно поле)</option>
+                    <option value="multiple" {% if question.question_type=='multiple' %}selected{% endif %}>Выбор
+                        нескольких</option>
+                    <option value="matching" {% if question.question_type=='matching' %}selected{% endif %}>Установить
+                        соответствие</option>
+                    <option value="contextual-multiple" {% if question.question_type=='contextual-multiple' %}selected{%
+                        endif %}>Контекст + выбор нескольких</option>
+                    <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>Сочинение
                     </option>
-                    <option value="single" {% if question.question_type=='single' %}selected{% endif %}>
-                        Краткий ответ (одно поле)
-                    </option>
-                    <option value="multiple" {% if question.question_type=='multiple' %}selected{% endif %}>
-                        Выбор нескольких
-                    </option>
-                    <option value="matching" {% if question.question_type=='matching' %}selected{% endif %}>
-                        Установить соответствие
-                    </option>
-                    <option value="textarea" {% if question.question_type=='textarea' %}selected{% endif %}>
-                        Сочинение
-                    </option>
-                    <option value="info">Информационный блок (текст)</option>
                 </select>
             </div>
 
             <!-- Текст для анализа -->
-            <div id="context-text-field" class="mb-4 hidden">
+            <div id="context-text-field"
+                class="mb-4 {% if question.question_type not in ['contextual-input', 'contextual-multiple'] %}hidden{% endif %}">
                 <label class="block font-medium mb-2">Текст для анализа</label>
                 <textarea name="context_text" class="border p-2 w-full rounded" rows="6"
                     placeholder="Вставьте текст, как в КИМе...">{{ question.context_text }}</textarea>
             </div>
 
-            <!-- Общий текст задания (для input, contextual-input, single, multiple, matching) -->
-            <div id="task-text-field" class="mb-4 hidden">
+            <!-- Общий текст задания -->
+            <div id="task-text-field"
+                class="mb-4 {% if question.question_type not in ['input', 'single', 'multiple', 'matching', 'contextual-input', 'contextual-multiple'] %}hidden{% endif %}">
                 <label class="block font-medium mb-2">Текст задания (общий)</label>
                 <textarea name="task_text" class="border p-2 w-full rounded" rows="3"
-                    placeholder="Например: В одном из слов допущена ошибка...">{{ question.task_text }}</textarea>
+                    placeholder="Вопрос сверху задания">{{ question.task_text }}</textarea>
             </div>
 
             <!-- Конкретный вопрос -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Текст вопроса</label>
-                <textarea name="question_text" class="border p-2 w-full rounded" rows="3" required
-                    placeholder="Например: опытные КОНСТРУКТОРЫ">{{ question.question_text }}</textarea>
+                <textarea name="question_text" class="border p-2 w-full rounded" rows="3"
+                    placeholder="Вопрос снизу задания">{{ question.question_text }}</textarea>
+            </div>
+
+            <!-- Варианты (для multiple, contextual-multiple) -->
+            <div id="options-field-multiple"
+                class="mb-4 {% if question.question_type not in ['multiple', 'contextual-multiple'] %}hidden{% endif %}">
+                <label class="block font-medium mb-2">Варианты (через ;)</label>
+                <input type="text" name="options" class="border p-2 w-full rounded"
+                    placeholder="1) опция1; 2) опция2; 3) опция3" value="{{ question.options }}">
             </div>
 
             <!-- Варианты (для matching) -->
-            <div id="options-field" class="mb-4 hidden">
+            <div id="options-field-matching"
+                class="mb-4 {% if question.question_type != 'matching' %}hidden{% endif %}">
                 <label class="block font-medium mb-2">Варианты (через ||)</label>
                 <textarea name="options" class="border p-2 w-full rounded" rows="30"
-                    placeholder="А) текст|Б) текст||1) текст|2) текст|3) текст">
-    </textarea>
+                    placeholder="А) текст|Б) текст||1) текст|2) текст|3) текст">{{ question.options }}</textarea>
                 <p class="text-sm text-gray-500 mt-1">
                     Левый блок (А, Б, В...) и правый блок (1, 2, 3...) разделены <strong>||</strong>
                 </p>
@@ -74,22 +78,16 @@
             <!-- Правильный ответ -->
             <div class="mb-4">
                 <label class="block font-medium mb-2">Правильный ответ</label>
-                <input type="text" name="correct_answer" value="{{ question.correct_answer }}"
-                    class="border p-2 w-full rounded" required>
-            </div>
-
-            <!-- Доп. инфо (для сочинения) -->
-            <div id="info-field" class="mb-4 hidden">
-                <label class="block font-medium mb-2">Доп. информация</label>
-                <input type="text" name="info" value="{{ question.info or '' }}" class="border p-2 w-full rounded"
-                    placeholder="Ответ должен быть не менее 150 слов">
+                <input type="text" name="correct_answer" id="correct-answer" class="border p-2 w-full rounded"
+                    value="{{ question.correct_answer }}" {% if question.question_type !='textarea' %}required{% endif
+                    %}>
             </div>
 
             <div class="flex space-x-4">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
                     Сохранить изменения
                 </button>
-                <a href="{{ url_for('admin.view_test', test_type_name=question.test.test_type.name) }}"
+                <a href="{{ url_for('admin.view_test', test_type_name=test_type_name) }}"
                     class="text-gray-600 hover:underline">
                     Отмена
                 </a>
@@ -98,49 +96,56 @@
     </div>
 </section>
 
+<!-- Подключаем тот же JS, что и в add_question.html -->
 <script>
-    // Получаем элементы
-    const questionTypeSelect = document.getElementById('question-type');
-    const contextTextField = document.getElementById('context-text-field');
+    const questionType = document.getElementById('question-type');
     const taskTextField = document.getElementById('task-text-field');
-    const optionsField = document.getElementById('options-field');
-    const infoField = document.getElementById('info-field');
+    const optionsFieldMultiple = document.getElementById('options-field-multiple');
+    const optionsFieldMatching = document.getElementById('options-field-matching');
+    const contextTextField = document.getElementById('context-text-field');
+    const correctAnswer = document.getElementById('correct-answer');
 
-    // Функция обновления видимости полей
     function updateFields() {
-        const type = questionTypeSelect.value;
+        const type = questionType.value;
 
-        // Показываем task_text для input, contextual-input, single, multiple, matching
-        if (['input', 'contextual-input', 'single', 'multiple', 'matching'].includes(type)) {
+        // Показать task_text
+        if (['input', 'single', 'multiple', 'matching', 'contextual-input', 'contextual-multiple'].includes(type)) {
             taskTextField.classList.remove('hidden');
         } else {
             taskTextField.classList.add('hidden');
         }
 
-        // Показываем context_text только для contextual-input
-        if (type === 'contextual-input') {
+        // Показать context_text
+        if (['contextual-input', 'contextual-multiple'].includes(type)) {
             contextTextField.classList.remove('hidden');
         } else {
             contextTextField.classList.add('hidden');
         }
 
-        // Показываем options для multiple, matching
-        if (['multiple', 'matching'].includes(type)) {
-            optionsField.classList.remove('hidden');
+        // Показать options
+        if (type === 'multiple') {
+            optionsFieldMultiple.classList.remove('hidden');
+            optionsFieldMatching.classList.add('hidden');
+        } else if (type === 'matching') {
+            optionsFieldMultiple.classList.add('hidden');
+            optionsFieldMatching.classList.remove('hidden');
+        } else if (type === 'contextual-multiple') {
+            optionsFieldMultiple.classList.remove('hidden');
+            optionsFieldMatching.classList.add('hidden');
         } else {
-            optionsField.classList.add('hidden');
+            optionsFieldMultiple.classList.add('hidden');
+            optionsFieldMatching.classList.add('hidden');
         }
 
-
-        if (['textarea', 'info'].includes(type)) {
-            infoField.classList.remove('hidden');
+        // Управление required для correct_answer
+        if (type === 'textarea') {
+            correctAnswer.removeAttribute('required');
+        } else {
+            correctAnswer.setAttribute('required', 'required');
         }
     }
 
-    // Обработчик изменения типа
-    questionTypeSelect.addEventListener('change', updateFields);
-
-    // Запускаем при загрузке страницы
+    questionType.addEventListener('change', updateFields);
     document.addEventListener('DOMContentLoaded', updateFields);
 </script>
 {% endblock %}
