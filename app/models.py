@@ -2,6 +2,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
 from app import db
+from flask_login import UserMixin
+
 
 class TestType(db.Model):
     __tablename__ = 'test_type'
@@ -37,7 +39,8 @@ class Question(db.Model):
     options = db.Column(db.Text)
     correct_answer = db.Column(db.String(200), nullable=False)
     info = db.Column(db.Text)
-    test_id = db.Column(db.Integer, db.ForeignKey('test.id'), nullable=False)  # ✅
+    test_id = db.Column(db.Integer, db.ForeignKey('test.id'), nullable=False)
+    score = db.Column(db.Integer, default=1)
 
 
 # === НОВОЕ: Пользователь и результаты ===

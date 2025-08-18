@@ -1,3 +1,4 @@
+# app\utils\primary_to_secondary.pyapp\utils\primary_to_secondary.py
 # Шкала перевода первичных баллов в тестовые (ЕГЭ по русскому языку, 2025)
 PRIMARY_TO_SECONDARY = {
     0: 0,

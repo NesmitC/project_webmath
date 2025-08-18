@@ -12,6 +12,8 @@ from flask_mail import Message
 from app import db, mail
 import re
 from app.utils.primary_to_secondary import get_secondary_score
+from flask_login import current_user
+from datetime import datetime, timezone
 
 
 main = Blueprint('main', __name__)
@@ -159,7 +161,10 @@ def submit_test():
     test = Test.query.get_or_404(test_id)
     questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
 
-    total_score = 0
+    # ✅ Сохраняем diagnostic_type заранее
+    diagnostic_type = test.test_type.diagnostic_type
+
+    primary_score = 0
     results = []
 
     for q in questions:
@@ -172,11 +177,29 @@ def submit_test():
             # Проверка: не пусто и только кириллица + цифры
             if not user_answer:
                 flash(f"❌ Задание {q.question_number}: ответ не может быть пустым.", "error")
-                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+                # ❌ Не делаем redirect — продолжаем сбор результатов
+                # Просто не добавляем баллы
+                points = 0
+                results.append({
+                    'question': q,
+                    'user_answer': user_answer,
+                    'is_correct': False,
+                    'points': points,
+                    'max_points': 1
+                })
+                continue
 
             if not CYRILLIC_DIGITS_ONLY.match(user_answer):
                 flash(f"❌ Задание {q.question_number}: разрешены только цифры и кириллица (1–50 символов).", "error")
-                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
+                points = 0
+                results.append({
+                    'question': q,
+                    'user_answer': user_answer,
+                    'is_correct': False,
+                    'points': points,
+                    'max_points': 1
+                })
+                continue
 
         # --- Типы с множественным выбором ---
         elif q.question_type in ['multiple', 'contextual-multiple']:
@@ -207,7 +230,7 @@ def submit_test():
             is_correct = user_answer_normalized == correct_answer_normalized
             points = 1 if is_correct else 0
 
-            total_score += points
+            primary_score += points
             results.append({
                 'question': q,
                 'user_answer': user_answer,
@@ -260,22 +283,7 @@ def submit_test():
         else:
             points = 0  # пустой ответ
 
-        # --- Обработка балла за сочинение ---
-        essay_score = request.form.get('essay_score', '').strip()
-        essay_points = 0
-
-        if essay_score.isdigit():
-            score = int(essay_score)
-            if 0 <= score <= 22:
-                essay_points = score
-            else:
-                flash("❌ Балл за сочинение должен быть от 0 до 22.", "error")
-                return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
-        else:
-            flash("❌ Балл за сочинение должен быть цифрой от 0 до 22.", "error")
-            return redirect(url_for('main.start_test', diagnostic_type=q.test.test_type.diagnostic_type))
-
-        total_score += essay_points
+        primary_score += points  # ✅ Начисляем баллы за вопрос
 
         results.append({
             'question': q,
@@ -285,17 +293,53 @@ def submit_test():
             'max_points': max_points
         })
 
-    # Общее баллы, вторичные
-    total_questions = len([r for r in results if r['max_points'] > 0])
-    primary_total = total_score  # Это сумма всех баллов (включая essay_score)
-    secondary_total = get_secondary_score(primary_total)
+    # --- ✅ ОБРАБОТКА СОЧИНЕНИЯ — ВНЕ ЦИКЛА ---
+    essay_score = request.form.get('essay_score', '').strip()
+    essay_points = 0
 
+    if essay_score.isdigit():
+        score = int(essay_score)
+        if 0 <= score <= 22:
+            essay_points = score
+        else:
+            flash("❌ Балл за сочинение должен быть от 0 до 22.", "error")
+    else:
+        flash("❌ Балл за сочинение должен быть цифрой от 0 до 22.", "error")
+
+    primary_score += essay_points  # ✅ Добавляем только один раз
+
+    # --- Финальные баллы ---
+    secondary_score = get_secondary_score(primary_score)  # ✅ Переводим в 100-балльную шкалу
+
+    # --- ✅ СОХРАНЕНИЕ РЕЗУЛЬТАТА В БД ---
+    if current_user.is_authenticated:
+        try:
+            result = Result(
+                user_id=current_user.id,
+                test_type=diagnostic_type,
+                score=primary_score,
+                total=secondary_score,
+                timestamp=datetime.now(timezone.utc)
+            )
+            db.session.add(result)
+            db.session.commit()
+            print("✅ Результат сохранён в БД")
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Ошибка сохранения: {e}")
+    else:
+        print("⚠️ Пользователь не залогинен — результат не сохранён")
+        flash("⚠️ Результат не сохранён: вы не авторизованы.", "error")
+
+    # --- Отображение результата ---
     return render_template(
         'result.html', 
         results=results, 
-        correct=primary_total, 
-        secondary=secondary_total, 
-        essay_points=essay_points)
+        primary_score=primary_score,
+        essay_points=essay_points,
+        secondary_score=secondary_score
+    )
+
 
 
 # ==================================================================

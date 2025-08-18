@@ -5,6 +5,7 @@
 <div class="container">
     <h1 class="text-2xl font-bold mb-6">РЕЗУЛЬТАТЫ</h1>
 
+    <!-- Таблица с детализацией -->
     <div class="bg-white p-6 rounded-lg shadow mb-6">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -21,22 +22,27 @@
                 </tr>
                 {% endfor %}
                 <!-- Задание 27 -->
-                <tr class="border-b border-gray-200">
-                    <td class="py-2">27.</td>
+                {% if essay_points > 0 %}
+                <tr class="border-b border-gray-200 font-medium">
+                    <td class="py-2">27. Сочинение</td>
                     <td class="py-2">{{ essay_points }}</td>
                 </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
 
+    <!-- Первичный балл -->
     <div class="text-xl font-bold text-center mb-6">
-        Всего баллов: {{ correct }}
+        Всего первичных баллов: {{ primary_score }}
     </div>
 
-    <div class="text-xl font-bold text-center mt-8 mb-6 border-t pt-6">
-        Вторичный (итоговый) балл - {{ secondary }}
+    <!-- Вторичный балл -->
+    <div class="text-2xl font-bold text-center mt-8 mb-6 border-t pt-6 text-blue-700">
+        Итоговый балл: {{ secondary_score }}
     </div>
 
+    <!-- Кнопки -->
     <div class="flex justify-center space-x-6">
         <a href="{{ url_for('main.profile') }}"
             class="btn btn-secondary bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">

@@ -110,7 +110,8 @@ def add_question(test_type_name):
             correct_answer=request.form.get('correct_answer', ''),
             info=request.form.get('info'),
             context_text=request.form.get('context_text'),
-            test_id=test.id
+            test_id=test.id,
+            score=int(request.form['score'])
         )
         db.session.add(question)
         db.session.commit()

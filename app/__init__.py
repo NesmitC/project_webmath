@@ -3,24 +3,14 @@ from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 from flask_migrate import Migrate
+from flask_login import LoginManager, current_user
 import os
+
 
 # Создаём экземпляры расширений
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()
-
-
-def inject_user():
-    from app.models import User
-    user = None
-    if 'user_id' in session:
-        # Пытаемся найти пользователя
-        user = User.query.get(session['user_id'])
-        # 🔽 Если не найден — очищаем сессию
-        if user is None:
-            session.pop('user_id', None)
-    return dict(current_user=user)
 
 
 def create_app():
@@ -50,19 +40,41 @@ def create_app():
     mail.init_app(app)
     migrate.init_app(app, db)
 
-    # ✅ Регистрируем контекстный процессор
+    # --- ✅ Перенесён внутрь create_app() ---
+    login_manager = LoginManager()
+    login_manager.login_view = 'main.login'
+    login_manager.init_app(app)
+
+    # Загрузчик пользователя
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        return User.query.get(int(user_id))
+    # --- КОНЕЦ ---
+
+    # Импортируем модели после инициализации db
+    from app.models import User
+
+    # Контекстный процессор для current_user
+    def inject_user():
+        user = None
+        if 'user_id' in session:
+            user = User.query.get(session['user_id'])
+            if user is None:
+                session.pop('user_id', None)
+        return dict(current_user=user)
+
     app.context_processor(inject_user)
 
     # Регистрируем Blueprint'ы
     from app.routes import main
     app.register_blueprint(main)
 
-    # 🔥 КЛЮЧЕВОЙ ПОРЯДОК:
-    from app.admin import admin          # 1. Создаём admin
-#    from app.admin import routes         # 2. Загружаем маршруты → @admin.route срабатывают
-    app.register_blueprint(admin)        # 3. Регистрируем ТОЛЬКО ПОСЛЕ всех маршрутов
+    from app.admin import admin
+    app.register_blueprint(admin)
 
     return app
+
 
 # Экспорт для импорта в других файлах
 __all__ = ['create_app', 'db', 'mail']
