@@ -1,6 +1,6 @@
 # app/routes.py
 
-from flask import Blueprint, render_template, jsonify, request, url_for, flash, session, redirect
+from flask import Blueprint, render_template, jsonify, request, url_for, flash, session, redirect, current_app
 from .assistant import ask_teacher
 from .neuro_method import ask_methodist  # ✅ Импорт методиста
 from app.models import TestType, Test, Question, User, Result
@@ -12,7 +12,7 @@ from flask_mail import Message
 from app import db, mail
 import re
 from app.utils.primary_to_secondary import get_secondary_score
-from flask_login import current_user
+from flask_login import current_user, login_required, login_user
 from datetime import datetime, timezone
 
 
@@ -157,189 +157,196 @@ CYRILLIC_DIGITS_ONLY = re.compile(r'^[0-9а-яА-ЯёЁ]{1,50}$')
 @main.route('/submit-test', methods=['POST'])
 @login_required
 def submit_test():
-    test_id = request.form['test_id']
-    test = Test.query.get_or_404(test_id)
-    questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
+    """Обработка отправки теста"""
+    try:
+        if not current_user.is_authenticated:
+            return redirect(url_for('main.login'))
 
-    # ✅ Сохраняем diagnostic_type заранее
-    diagnostic_type = test.test_type.diagnostic_type
+        test_id = request.form.get('test_id')
+        if not test_id:
+            return redirect(url_for('main.examenator'))
 
-    primary_score = 0
-    results = []
+        test = Test.query.get(test_id)
+        if not test:
+            return redirect(url_for('main.examenator'))
 
-    for q in questions:
-        user_answer = None
+        questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
+        if not questions:
+            return redirect(url_for('main.examenator'))
 
-        # --- Типы с текстовым ответом: input, single, contextual-input ---
-        if q.question_type in ['input', 'single', 'contextual-input']:
-            user_answer = request.form.get(f'answer_{q.id}', '').strip()
+        processing_result = process_test_answers(test, questions, request.form)
+        if processing_result.get('error'):
+            return redirect(url_for('main.examenator'))
 
-            # Проверка: не пусто и только кириллица + цифры
-            if not user_answer:
-                flash(f"❌ Задание {q.question_number}: ответ не может быть пустым.", "error")
-                # ❌ Не делаем redirect — продолжаем сбор результатов
-                # Просто не добавляем баллы
-                points = 0
-                results.append({
-                    'question': q,
-                    'user_answer': user_answer,
-                    'is_correct': False,
-                    'points': points,
-                    'max_points': 1
-                })
-                continue
-
-            if not CYRILLIC_DIGITS_ONLY.match(user_answer):
-                flash(f"❌ Задание {q.question_number}: разрешены только цифры и кириллица (1–50 символов).", "error")
-                points = 0
-                results.append({
-                    'question': q,
-                    'user_answer': user_answer,
-                    'is_correct': False,
-                    'points': points,
-                    'max_points': 1
-                })
-                continue
-
-        # --- Типы с множественным выбором ---
-        elif q.question_type in ['multiple', 'contextual-multiple']:
-            answers = request.form.getlist(f'answer_{q.id}')
-            cleaned = sorted([a.strip() for a in answers if a.strip()])
-            user_answer = '; '.join(cleaned)
-
-        # --- Установите соответствие ---
-        elif q.question_type == 'matching':
-            answers = []
-            for i in range(10):  # максимум 10 пар
-                val = request.form.get(f'answer_{q.id}_{i}')
-                if val:
-                    answers.append(f"{chr(65 + i)}-{val}")
-                else:
-                    answers.append(f"{chr(65 + i)}-?")
-
-            user_answer = ', '.join(answers)
-
-            # Нормализация для сравнения
-            def normalize_matching(answer_str):
-                pairs = [p.strip().upper() for p in answer_str.split(',') if p.strip()]
-                return ', '.join(sorted(pairs))
-
-            user_answer_normalized = normalize_matching(user_answer)
-            correct_answer_normalized = normalize_matching(q.correct_answer.strip())
-
-            is_correct = user_answer_normalized == correct_answer_normalized
-            points = 1 if is_correct else 0
-
-            primary_score += points
-            results.append({
-                'question': q,
-                'user_answer': user_answer,
-                'is_correct': is_correct,
-                'points': points,
-                'max_points': 1
-            })
-            continue  # пропускаем общую логику
-
-        # --- Все остальные типы ---
-        else:
-            user_answer = request.form.get(f'answer_{q.id}', '').strip()
-
-        # --- Проверка правильности и начисление баллов ---
-        points = 0
-        max_points = 1
-        correct_answer_clean = q.correct_answer.strip() if q.correct_answer else ""
-
-        if user_answer and correct_answer_clean:
-            # 🔢 Если ответ состоит только из цифр
-            if user_answer.isdigit() and correct_answer_clean.isdigit():
-                user_set = set(user_answer)
-                correct_set = set(correct_answer_clean)
-
-                # Задания 8 и 22 — особая система баллов
-                if q.question_number in [8, 22]:
-                    max_points = 2
-                    matches = len(user_set & correct_set)  # пересечение
-                    if matches == 5:
-                        points = 2
-                    elif matches >= 3:
-                        points = 1
-                    else:
-                        points = 0
-                # Остальные цифровые задания — 1 балл за совпадение состава цифр
-                else:
-                    points = 1 if sorted(user_answer) == sorted(correct_answer_clean) else 0
-
-            # 📝 Текстовые ответы (поддержка нескольких вариантов через |)
-            else:
-                user_clean = user_answer.strip().lower()
-                # Разбиваем правильные ответы по | и приводим к нижнему регистру
-                correct_options = [opt.strip().lower() for opt in correct_answer_clean.split('|') if opt.strip()]
-                # Если пользовательский ответ совпадает с любым из правильных — засчитываем
-                if user_clean in correct_options:
-                    points = 1
-                else:
-                    points = 0
-
-        else:
-            points = 0  # пустой ответ
-
-        primary_score += points  # ✅ Начисляем баллы за вопрос
-
-        results.append({
-            'question': q,
-            'user_answer': user_answer,
-            'is_correct': points > 0,
-            'points': points,
-            'max_points': max_points
-        })
-
-    # --- ✅ ОБРАБОТКА СОЧИНЕНИЯ — ВНЕ ЦИКЛА ---
-    essay_score = request.form.get('essay_score', '').strip()
-    essay_points = 0
-
-    if essay_score.isdigit():
-        score = int(essay_score)
-        if 0 <= score <= 22:
-            essay_points = score
-        else:
-            flash("❌ Балл за сочинение должен быть от 0 до 22.", "error")
-    else:
-        flash("❌ Балл за сочинение должен быть цифрой от 0 до 22.", "error")
-
-    primary_score += essay_points  # ✅ Добавляем только один раз
-
-    # --- Финальные баллы ---
-    secondary_score = get_secondary_score(primary_score)  # ✅ Переводим в 100-балльную шкалу
-
-    # --- ✅ СОХРАНЕНИЕ РЕЗУЛЬТАТА В БД ---
-    if current_user.is_authenticated:
         try:
             result = Result(
                 user_id=current_user.id,
-                test_type=diagnostic_type,
-                score=primary_score,
-                total=secondary_score,
+                test_type=test.test_type.diagnostic_type,
+                score=processing_result['primary_score'],
+                total=processing_result['secondary_score'],
                 timestamp=datetime.now(timezone.utc)
             )
             db.session.add(result)
             db.session.commit()
-            print("✅ Результат сохранён в БД")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Ошибка сохранения: {e}")
-    else:
-        print("⚠️ Пользователь не залогинен — результат не сохранён")
-        flash("⚠️ Результат не сохранён: вы не авторизованы.", "error")
+            current_app.logger.error(f"Ошибка сохранения результата: {str(e)}")
+            return redirect(url_for('main.examenator'))
 
-    # --- Отображение результата ---
-    return render_template(
-        'result.html', 
-        results=results, 
-        primary_score=primary_score,
-        essay_points=essay_points,
-        secondary_score=secondary_score
-    )
+        return render_template(
+            'result.html',
+            results=processing_result['results'],
+            primary_score=processing_result['primary_score'],
+            essay_points=processing_result['essay_points'],
+            secondary_score=processing_result['secondary_score']
+        )
 
+    except Exception as e:
+        current_app.logger.error(f"Ошибка в submit_test: {str(e)}", exc_info=True)
+        return redirect(url_for('main.examenator'))
+
+
+def process_test_answers(test, questions, form_data):
+    """Обрабатывает все ответы теста"""
+    result = {
+        'primary_score': 0,
+        'secondary_score': 0,
+        'essay_points': 0,
+        'results': [],
+        'error': None
+    }
+
+    try:
+        for q in questions:
+            question_result = process_question(q, form_data)
+            result['results'].append(question_result)
+            result['primary_score'] += question_result['points']
+
+        essay_points, essay_error = process_essay(form_data.get('essay_score', ''))
+        if essay_error:
+            result['error'] = essay_error
+            return result
+
+        result['essay_points'] = essay_points
+        result['primary_score'] += essay_points
+        result['secondary_score'] = get_secondary_score(result['primary_score'])
+
+    except Exception as e:
+        result['error'] = str(e)
+        current_app.logger.error(f"Ошибка process_test_answers: {str(e)}")
+
+    return result
+
+
+def process_question(question, form_data):
+    """Обрабатывает один вопрос теста"""
+    response = {
+        'question': question,
+        'user_answer': '',
+        'is_correct': False,
+        'points': 0,
+        'max_points': 1,
+        'error': None
+    }
+
+    try:
+        user_answer = get_user_response(question, form_data)
+        response['user_answer'] = user_answer
+
+        if question.question_type == 'matching':
+            response.update(evaluate_matching_question(question, user_answer))
+        else:
+            response.update(evaluate_standard_question(question, user_answer))
+
+    except ValueError as e:
+        response['error'] = str(e)
+        response['points'] = 0
+    except Exception as e:
+        response['error'] = "Ошибка обработки вопроса"
+        response['points'] = 0
+        current_app.logger.warning(f"Ошибка process_question: {str(e)}")
+
+    return response
+
+
+def get_user_response(question, form_data):
+    """Извлекает ответ пользователя"""
+    if question.question_type in ['input', 'single', 'contextual-input']:
+        answer = form_data.get(f'answer_{question.id}', '').strip()
+        if not answer:
+            raise ValueError("Пустой ответ")
+        if not CYRILLIC_DIGITS_ONLY.match(answer):
+            raise ValueError("Недопустимые символы")
+        return answer
+
+    elif question.question_type in ['multiple', 'contextual-multiple']:
+        answers = form_data.getlist(f'answer_{question.id}')
+        return '; '.join(sorted(a.strip() for a in answers if a.strip()))
+
+    elif question.question_type == 'matching':
+        answers = []
+        for i in range(10):
+            val = form_data.get(f'answer_{question.id}_{i}')
+            answers.append(f"{chr(65 + i)}-{val if val else '?'}")
+        return ', '.join(answers)
+
+    return form_data.get(f'answer_{question.id}', '').strip()
+
+
+def evaluate_matching_question(question, user_answer):
+    """Оценивает вопрос на сопоставление"""
+    def normalize(answer_str):
+        pairs = [p.strip().upper() for p in answer_str.split(',') if p.strip()]
+        return ', '.join(sorted(pairs))
+
+    is_correct = normalize(user_answer) == normalize(question.correct_answer.strip())
+    return {
+        'is_correct': is_correct,
+        'points': 1 if is_correct else 0,
+        'max_points': 1
+    }
+
+
+def evaluate_standard_question(question, user_answer):
+    """Оценивает стандартные вопросы"""
+    correct_answer = question.correct_answer.strip() if question.correct_answer else ""
+    points = 0
+    max_points = 1
+
+    if user_answer and correct_answer:
+        if user_answer.isdigit() and correct_answer.isdigit():
+            if question.question_number in [8, 22]:
+                max_points = 2
+                matches = len(set(user_answer) & set(correct_answer))
+                points = 2 if matches == 5 else 1 if matches >= 3 else 0
+            else:
+                points = 1 if sorted(user_answer) == sorted(correct_answer) else 0
+        else:
+            user_clean = user_answer.lower().strip()
+            correct_options = [opt.strip().lower() for opt in correct_answer.split('|') if opt.strip()]
+            points = 1 if user_clean in correct_options else 0
+
+    return {
+        'is_correct': points > 0,
+        'points': points,
+        'max_points': max_points
+    }
+
+
+def process_essay(essay_score):
+    """Обрабатывает баллы за сочинение"""
+    essay_score = essay_score.strip()
+    if not essay_score:
+        return 0, None
+        
+    if not essay_score.isdigit():
+        return 0, "Неверный формат балла"
+    
+    score = int(essay_score)
+    if not (0 <= score <= 22):
+        return 0, "Балл вне диапазона"
+    
+    return score, None
 
 
 # ==================================================================
@@ -419,28 +426,50 @@ def register():
     return render_template('register.html')
 
 
-@main.route('/login', methods=['GET', 'POST'])
+@main.route('/login', methods=['GET', 'POST'])  # Добавьте GET метод
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
         user = User.query.filter_by(username=username).first()
+        
         if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            flash("✅ Вы вошли в систему!")
-            return redirect(url_for('main.profile'))
-        else:
-            flash("❌ Неверное имя пользователя или пароль.")
-
+            login_user(user)
+            flash("Вы успешно вошли в систему", "success")
+            next_page = request.args.get('next') or url_for('main.profile')
+            return redirect(next_page)
+        
+        flash("Неверное имя пользователя или пароль", "error")
+    
+    # Добавьте рендеринг шаблона для GET запросов
     return render_template('login.html')
 
+
+
 @main.route('/profile')
-@login_required  # ← тоже защищаем профиль
+@login_required
 def profile():
-    user = User.query.get(session['user_id'])
-    results = Result.query.filter_by(user_id=user.id).order_by(Result.timestamp.desc()).all()
-    return render_template('profile.html', user=user, results=results)
+    """Страница профиля пользователя"""
+    # Добавим проверку is_authenticated для надежности
+    if not current_user.is_authenticated:
+        return redirect(url_for('main.login'))
+    
+    try:
+        results = Result.query.filter_by(user_id=current_user.get_id())\
+                             .order_by(Result.timestamp.desc())\
+                             .all()
+        
+        return render_template(
+            'profile.html',
+            user=current_user,
+            results=results
+        )
+    except Exception as e:
+        current_app.logger.error(f"Ошибка загрузки профиля: {str(e)}")
+        flash("Произошла ошибка при загрузке профиля", "error")
+        return redirect(url_for('main.index'))
+
 
 @main.route('/logout')
 def logout():

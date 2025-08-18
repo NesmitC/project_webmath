@@ -45,7 +45,7 @@ class Question(db.Model):
 
 # === НОВОЕ: Пользователь и результаты ===
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -56,6 +56,22 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)  # ← новое поле
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     results = db.relationship('Result', backref='user', lazy=True, cascade="all, delete-orphan")
+
+    # Методы для flask_login
+    def get_id(self):
+        return str(self.id)
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
 
 
 class Result(db.Model):

@@ -1,4 +1,6 @@
 # app/__init__.py
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../database/examenator.db'
+
 from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
@@ -11,6 +13,10 @@ import os
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()
+
+# ✅ ОБЪЯВЛЯЕМ login_manager, но не инициализируем
+login_manager = LoginManager()
+login_manager.login_view = 'main.login'
 
 
 def create_app():
@@ -40,41 +46,43 @@ def create_app():
     mail.init_app(app)
     migrate.init_app(app, db)
 
-    # --- ✅ Перенесён внутрь create_app() ---
-    login_manager = LoginManager()
-    login_manager.login_view = 'main.login'
+    # ✅ Привязываем login_manager к приложению
     login_manager.init_app(app)
 
-    # Загрузчик пользователя
+    # ✅ Загрузчик пользователя
     @login_manager.user_loader
     def load_user(user_id):
+        print(f"🔍 Загрузка пользователя по ID: {user_id}")
         from app.models import User
-        return User.query.get(int(user_id))
-    # --- КОНЕЦ ---
+        user = User.query.get(int(user_id))
+        if user:
+            print(f"✅ Найден пользователь: {user.username}")
+        else:
+            print("❌ Пользователь не найден")
+        return user
 
-    # Импортируем модели после инициализации db
+    # ✅ Импортируем модели
     from app.models import User
 
-    # Контекстный процессор для current_user
+    app.context_processor
     def inject_user():
-        user = None
-        if 'user_id' in session:
-            user = User.query.get(session['user_id'])
-            if user is None:
-                session.pop('user_id', None)
-        return dict(current_user=user)
+        return dict(current_user=current_user)
 
-    app.context_processor(inject_user)
-
-    # Регистрируем Blueprint'ы
+    # ✅ Регистрируем Blueprint'ы
     from app.routes import main
     app.register_blueprint(main)
 
     from app.admin import admin
     app.register_blueprint(admin)
 
+    # ✅ Создаём папку и таблицы
+    with app.app_context():
+        instance_dir = os.path.join(basedir, 'instance')
+        os.makedirs(instance_dir, exist_ok=True)
+        db.create_all()
+        print("✅ Все таблицы созданы: users, test_types, tests, questions, results")
+
     return app
 
 
-# Экспорт для импорта в других файлах
 __all__ = ['create_app', 'db', 'mail']
