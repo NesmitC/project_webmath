@@ -2,7 +2,8 @@
 
 from flask import Blueprint, render_template, jsonify, request, url_for, flash, session, redirect, current_app
 from .assistant import ask_teacher
-from .neuro_method import ask_methodist  # ✅ Импорт методиста
+from .neuro_method import ask_methodist         # ✅ Импорт методиста
+from app.neuro_kurator import analyze_student   # ✅ Импорт куратора
 from app.models import TestType, Test, Question, User, Result
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -154,143 +155,23 @@ def question(question_index):
 # Паттерн: только кириллица и цифры, длина 1–50
 CYRILLIC_DIGITS_ONLY = re.compile(r'^[0-9а-яА-ЯёЁ]{1,50}$')
 
-@main.route('/submit-test', methods=['POST'])
-@login_required
-def submit_test():
-    """Обработка отправки теста"""
-    try:
-        if not current_user.is_authenticated:
-            return redirect(url_for('main.login'))
+# === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+# Должны быть объявлены ДО использования в маршрутах
 
-        test_id = request.form.get('test_id')
-        if not test_id:
-            return redirect(url_for('main.examenator'))
-
-        test = Test.query.get(test_id)
-        if not test:
-            return redirect(url_for('main.examenator'))
-
-        questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
-        if not questions:
-            return redirect(url_for('main.examenator'))
-
-        processing_result = process_test_answers(test, questions, request.form)
-        if processing_result.get('error'):
-            return redirect(url_for('main.examenator'))
-
-        try:
-            result = Result(
-                user_id=current_user.id,
-                test_type=test.test_type.diagnostic_type,
-                score=processing_result['primary_score'],
-                total=processing_result['secondary_score'],
-                timestamp=datetime.now(timezone.utc)
-            )
-            db.session.add(result)
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Ошибка сохранения результата: {str(e)}")
-            return redirect(url_for('main.examenator'))
-
-        return render_template(
-            'result.html',
-            results=processing_result['results'],
-            primary_score=processing_result['primary_score'],
-            essay_points=processing_result['essay_points'],
-            secondary_score=processing_result['secondary_score']
-        )
-
-    except Exception as e:
-        current_app.logger.error(f"Ошибка в submit_test: {str(e)}", exc_info=True)
-        return redirect(url_for('main.examenator'))
-
-
-def process_test_answers(test, questions, form_data):
-    """Обрабатывает все ответы теста"""
-    result = {
-        'primary_score': 0,
-        'secondary_score': 0,
-        'essay_points': 0,
-        'results': [],
-        'error': None
-    }
-
-    try:
-        for q in questions:
-            question_result = process_question(q, form_data)
-            result['results'].append(question_result)
-            result['primary_score'] += question_result['points']
-
-        essay_points, essay_error = process_essay(form_data.get('essay_score', ''))
-        if essay_error:
-            result['error'] = essay_error
-            return result
-
-        result['essay_points'] = essay_points
-        result['primary_score'] += essay_points
-        result['secondary_score'] = get_secondary_score(result['primary_score'])
-
-    except Exception as e:
-        result['error'] = str(e)
-        current_app.logger.error(f"Ошибка process_test_answers: {str(e)}")
-
-    return result
-
-
-def process_question(question, form_data):
-    """Обрабатывает один вопрос теста"""
-    response = {
-        'question': question,
-        'user_answer': '',
-        'is_correct': False,
-        'points': 0,
-        'max_points': 1,
-        'error': None
-    }
-
-    try:
-        user_answer = get_user_response(question, form_data)
-        response['user_answer'] = user_answer
-
-        if question.question_type == 'matching':
-            response.update(evaluate_matching_question(question, user_answer))
-        else:
-            response.update(evaluate_standard_question(question, user_answer))
-
-    except ValueError as e:
-        response['error'] = str(e)
-        response['points'] = 0
-    except Exception as e:
-        response['error'] = "Ошибка обработки вопроса"
-        response['points'] = 0
-        current_app.logger.warning(f"Ошибка process_question: {str(e)}")
-
-    return response
-
-
-def get_user_response(question, form_data):
-    """Извлекает ответ пользователя"""
-    if question.question_type in ['input', 'single', 'contextual-input']:
-        answer = form_data.get(f'answer_{question.id}', '').strip()
-        if not answer:
-            raise ValueError("Пустой ответ")
-        if not CYRILLIC_DIGITS_ONLY.match(answer):
-            raise ValueError("Недопустимые символы")
-        return answer
-
-    elif question.question_type in ['multiple', 'contextual-multiple']:
-        answers = form_data.getlist(f'answer_{question.id}')
-        return '; '.join(sorted(a.strip() for a in answers if a.strip()))
-
-    elif question.question_type == 'matching':
-        answers = []
-        for i in range(10):
-            val = form_data.get(f'answer_{question.id}_{i}')
-            answers.append(f"{chr(65 + i)}-{val if val else '?'}")
-        return ', '.join(answers)
-
-    return form_data.get(f'answer_{question.id}', '').strip()
+def process_essay(essay_score):
+    """Обрабатывает баллы за сочинение"""
+    essay_score = essay_score.strip()
+    if not essay_score:
+        return 0, None
+        
+    if not essay_score.isdigit():
+        return 0, "Неверный формат балла"
+    
+    score = int(essay_score)
+    if not (0 <= score <= 22):
+        return 0, "Балл вне диапазона"
+    
+    return score, None
 
 
 def evaluate_matching_question(question, user_answer):
@@ -333,21 +214,166 @@ def evaluate_standard_question(question, user_answer):
     }
 
 
-def process_essay(essay_score):
-    """Обрабатывает баллы за сочинение"""
-    essay_score = essay_score.strip()
-    if not essay_score:
-        return 0, None
-        
-    if not essay_score.isdigit():
-        return 0, "Неверный формат балла"
-    
-    score = int(essay_score)
-    if not (0 <= score <= 22):
-        return 0, "Балл вне диапазона"
-    
-    return score, None
+def get_user_response(question, form_data):
+    """Извлекает ответ пользователя"""
+    if question.question_type in ['input', 'single', 'contextual-input']:
+        answer = form_data.get(f'answer_{question.id}', '').strip()
+        if not answer:
+            raise ValueError("Пустой ответ")
+        if not CYRILLIC_DIGITS_ONLY.match(answer):
+            raise ValueError("Недопустимые символы")
+        return answer
 
+    elif question.question_type in ['multiple', 'contextual-multiple']:
+        answers = form_data.getlist(f'answer_{question.id}')
+        return '; '.join(sorted(a.strip() for a in answers if a.strip()))
+
+    elif question.question_type == 'matching':
+        answers = []
+        for i in range(10):
+            val = form_data.get(f'answer_{question.id}_{i}')
+            answers.append(f"{chr(65 + i)}-{val if val else '?'}")
+        return ', '.join(answers)
+
+    return form_data.get(f'answer_{question.id}', '').strip()
+
+
+def process_question(question, form_data):
+    """Обрабатывает один вопрос теста"""
+    response = {
+        'question': question,
+        'user_answer': '',
+        'is_correct': False,
+        'points': 0,
+        'max_points': 1,
+        'error': None
+    }
+
+    try:
+        user_answer = get_user_response(question, form_data)
+        response['user_answer'] = user_answer
+
+        if question.question_type == 'matching':
+            response.update(evaluate_matching_question(question, user_answer))
+        else:
+            response.update(evaluate_standard_question(question, user_answer))
+
+    except ValueError as e:
+        response['error'] = str(e)
+        response['points'] = 0
+    except Exception as e:
+        response['error'] = "Ошибка обработки вопроса"
+        response['points'] = 0
+        current_app.logger.warning(f"Ошибка process_question: {str(e)}")
+
+    return response
+
+
+def process_test_answers(test, questions, form_data):
+    """Обрабатывает все ответы теста и возвращает детализацию по номерам вопросов"""
+    result = {
+        'primary_score': 0,
+        'secondary_score': 0,
+        'essay_points': 0,
+        'results': [],
+        'question_scores': {},  # ← Ключевое: хранит {1: 2, 2: 1, ..., 26: 0}
+        'error': None
+    }
+
+    try:
+        # Инициализируем все 26 вопросов нулём
+        for i in range(1, 27):
+            result['question_scores'][i] = 0
+
+        for q in questions:
+            question_result = process_question(q, form_data)
+            result['results'].append(question_result)
+
+            # Сохраняем балл по номеру вопроса (если 1–26)
+            if 1 <= q.question_number <= 26:
+                result['question_scores'][q.question_number] = question_result['points']
+
+            result['primary_score'] += question_result['points']
+
+        essay_points, essay_error = process_essay(form_data.get('essay_score', ''))
+        if essay_error:
+            result['error'] = essay_error
+            return result
+
+        result['essay_points'] = essay_points
+        result['primary_score'] += essay_points
+        result['secondary_score'] = get_secondary_score(result['primary_score'])
+
+    except Exception as e:
+        result['error'] = str(e)
+        current_app.logger.error(f"Ошибка process_test_answers: {str(e)}")
+
+    return result
+
+
+@main.route('/submit-test', methods=['POST'])
+@login_required
+def submit_test():
+    """Обработка отправки теста с детальным сохранением результатов по каждому вопросу (1–26) и сочинению"""
+    try:
+        if not current_user.is_authenticated:
+            return redirect(url_for('main.login'))
+
+        test_id = request.form.get('test_id')
+        if not test_id:
+            return redirect(url_for('main.examenator'))
+
+        test = Test.query.get(test_id)
+        if not test:
+            return redirect(url_for('main.examenator'))
+
+        questions = Question.query.filter_by(test_id=test.id).order_by(Question.question_number).all()
+        if not questions:
+            return redirect(url_for('main.examenator'))
+
+        # Теперь Pylance НЕ ругается — функция объявлена выше
+        processing_result = process_test_answers(test, questions, request.form)
+        if processing_result.get('error'):
+            return redirect(url_for('main.examenator'))
+
+        # Формируем данные для сохранения в БД
+        result_data = {
+            'user_id': current_user.id,
+            'test_type': test.test_type.diagnostic_type,
+            'essay_score': processing_result['essay_points'],
+            'score': processing_result['primary_score'],      # уже включает сочинение
+            'total': processing_result['secondary_score'],
+            'timestamp': datetime.now(timezone.utc)
+        }
+
+        # Добавляем баллы по каждому из 26 заданий
+        for i in range(1, 27):
+            result_data[f'q{i}'] = processing_result['question_scores'].get(i, 0)
+
+        result = Result(**result_data)
+
+        try:
+            db.session.add(result)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Ошибка сохранения результата в БД: {str(e)}")
+            return redirect(url_for('main.examenator'))
+
+        return render_template(
+            'result.html',
+            results=processing_result['results'],
+            primary_score=processing_result['primary_score'],
+            essay_points=processing_result['essay_points'],
+            secondary_score=processing_result['secondary_score']
+        )
+
+    except Exception as e:
+        current_app.logger.error(f"Ошибка в submit_test: {str(e)}", exc_info=True)
+        return redirect(url_for('result'))
+
+
+    
 
 # ==================================================================
 
@@ -504,7 +530,7 @@ def send_confirmation_email(user):
 
 
 # ---------------------------------------------------------------------
-# Маршруты для подтверждения emeil
+# Маршруты для подтверждения emаil
 @main.route('/confirm/<token>')
 def confirm_email(token):
     s = get_serializer()
@@ -544,3 +570,16 @@ def resend_confirmation():
 
 
 # ---------------------------------------------------------------------
+
+# нейрокуратор - маршрут для него
+@main.route('/dashboard')
+@login_required
+def dashboard():
+    user_id = current_user.id
+    analysis = analyze_student(user_id, db)
+
+    if analysis.get('error'):
+        flash(analysis['error'])
+        return redirect(url_for('main.index'))
+
+    return render_template('dashboard.html', analysis=analysis)

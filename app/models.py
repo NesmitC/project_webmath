@@ -55,7 +55,7 @@ class User(db.Model, UserMixin):
     confirmed = db.Column(db.Boolean, default=False)  # ← новое поле
     is_admin = db.Column(db.Boolean, default=False)  # ← новое поле
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    results = db.relationship('Result', backref='user', lazy=True, cascade="all, delete-orphan")
+    results = db.relationship('Result', back_populates='user')
 
     # Методы для flask_login
     def get_id(self):
@@ -79,6 +79,55 @@ class Result(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     test_type = db.Column(db.String(50), nullable=False)  # 'incoming', 'current', 'final'
-    score = db.Column(db.Integer, nullable=False)
-    total = db.Column(db.Integer, nullable=False)
+
+    # Баллы по каждому заданию (1–26): 0, 1 или 2
+    q1 = db.Column(db.Integer, default=0)
+    q2 = db.Column(db.Integer, default=0)
+    q3 = db.Column(db.Integer, default=0)
+    q4 = db.Column(db.Integer, default=0)
+    q5 = db.Column(db.Integer, default=0)
+    q6 = db.Column(db.Integer, default=0)
+    q7 = db.Column(db.Integer, default=0)
+    q8 = db.Column(db.Integer, default=0)
+    q9 = db.Column(db.Integer, default=0)
+    q10 = db.Column(db.Integer, default=0)
+    q11 = db.Column(db.Integer, default=0)
+    q12 = db.Column(db.Integer, default=0)
+    q13 = db.Column(db.Integer, default=0)
+    q14 = db.Column(db.Integer, default=0)
+    q15 = db.Column(db.Integer, default=0)
+    q16 = db.Column(db.Integer, default=0)
+    q17 = db.Column(db.Integer, default=0)
+    q18 = db.Column(db.Integer, default=0)
+    q19 = db.Column(db.Integer, default=0)
+    q20 = db.Column(db.Integer, default=0)
+    q21 = db.Column(db.Integer, default=0)
+    q22 = db.Column(db.Integer, default=0)
+    q23 = db.Column(db.Integer, default=0)
+    q24 = db.Column(db.Integer, default=0)
+    q25 = db.Column(db.Integer, default=0)
+    q26 = db.Column(db.Integer, default=0)
+
+    # Сочинение — отдельно
+    essay_score = db.Column(db.Integer, default=0)
+
+    # Общий балл (можно вычислять автоматически)
+    score = db.Column(db.Integer, nullable=False)  # сумма всех заданий + сочинение
+    total = db.Column(db.Integer, nullable=False)  # максимальный возможный балл
+
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Связь с пользователем (если есть)
+    user = db.relationship('User', back_populates='results')
+
+    def __repr__(self):
+        return f'<Result user_id={self.user_id} test_type={self.test_type} score={self.score}/{self.total}>'
+
+    def calculate_score(self):
+        """Вычисляем общий балл на основе полей q1..q26 и essay_score"""
+        questions = [getattr(self, f'q{i}', 0) for i in range(1, 27)]
+        total_questions = sum(questions)
+        self.score = total_questions + (self.essay_score or 0)
+        # total — это максимально возможный балл (например, 52 за задания + 24 за сочинение = 76)
+        # Можно задать вручную или вычислить по тесту
+        return self.score
