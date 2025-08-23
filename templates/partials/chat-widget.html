@@ -1,0 +1,53 @@
+<!-- templates/partials/chat-widget.html -->
+
+<!-- КНОПКА-АВАТАР (самостоятельный fixed-элемент) -->
+<button id="assistant-toggle"
+    class="fixed top-20 right-12 z-50 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 focus:outline-none transition"
+    title="Нейроучитель">
+    <span class="material-symbols-outlined">smart_toy</span>
+</button>
+
+<!-- ОКНО ЧАТА (самостоятельный fixed-элемент) -->
+<div id="assistant-window"
+    class="fixed top-20 right-12 z-50 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border flex flex-col overflow-hidden transition-all duration-300">
+    <div class="flex items-center justify-between p-4 bg-gray-50 border-b">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span class="material-symbols-outlined text-indigo-600 text-sm">smart_toy</span>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-800 text-sm">Нейроучитель</h3>
+                <p class="text-xs text-green-600">Онлайн</p>
+            </div>
+            <div class="flex space-x-2">
+                <button id="clear-chat" class="text-xs text-indigo-600 hover:text-indigo-800 underline px-2"
+                    title="Начать сначала">
+                    Очистить
+                </button>
+                <button id="close-chat" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+        </div>
+        <button id="close-chat" class="text-gray-500 hover:text-gray-700">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+    </div>
+
+    <!-- Сообщения -->
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-2 bg-gray-50"
+        style="min-height: 80px; max-height: 450px;"></div>
+
+    <!-- Ввод -->
+    <div class="p-3 bg-white border-t">
+        <div class="flex gap-2">
+            <input type="text" id="user-input" placeholder="Спросите что-нибудь..."
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm"
+                autocomplete="off">
+            <button id="send-btn"
+                class="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
+                ↵
+            </button>
+        </div>
+    </div>
+</div>

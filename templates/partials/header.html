@@ -16,61 +16,13 @@
                     <h1 class="text-2xl font-bold text-indigo-700">НейроЭксперт</h1>
                 </div>
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Обучение с нейросотрудником</h2>
-                <p class="text-lg text-gray-600 max-w-lg">
-                    Задайте вопрос — и получите точный ответ от нейроучителя русского языка.
-                </p>
+                <p>Твоя школа будущего</p>
             </div>
 
             <!-- Правая часть: Чат -->
             <div class="lg:w-1/2">
-                <div class="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                            <span class="material-symbols-outlined text-indigo-600">smart_toy</span>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-800">Нейроучитель</h3>
-                            <p class="text-xs text-gray-500">Онлайн</p>
-                        </div>
-                    </div>
-
-                    <!-- Окно чата -->
-                    <div id="chat-messages"
-                        class="bg-gray-50 rounded-lg p-4 h-64 overflow-y-auto mb-3 text-sm space-y-2">
-                        <div class="flex justify-start">
-                            <div class="bg-gray-200 text-gray-800 rounded-lg px-4 py-2 max-w-xs">
-                                Здравствуйте! Я — нейроучитель русского языка. Чем могу помочь?
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Поле ввода -->
-                    <div class="flex space-x-2">
-                        <input type="text" id="user-input" placeholder="Введите вопрос..."
-                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                            @keydown.enter="sendMessage()" />
-                        <button onclick="sendMessage()"
-                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                            Отправить
-                        </button>
-                    </div>
-                </div>
+                {% include 'partials/chat-widget.html' %}
             </div>
         </div>
-    </div>
-</section>
-
-<section class="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-    <div class="container mx-auto px-6 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
-            Добро пожаловать в <span class="text-blue-600">Нейростат</span>
-        </h1>
-        <p class="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
-            Онлайн-школа, где обучение управляют нейросотрудники и нейроэкзаменаторы.
-        </p>
-        <a href="{{ url_for('main.examenator') }}"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition inline-block">
-            Пройти диагностику
-        </a>
     </div>
 </section>
