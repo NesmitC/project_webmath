@@ -29,8 +29,6 @@ with app.app_context():
 
 # . Теперь можно импортировать модули, зависящие от app/db
 from flask import render_template, request, jsonify
-from app.assistant import ask_teacher
-from app.neuro_method import ask_methodist
 import requests
 
 # Не нужно повторно настраивать SQLALCHEMY_DATABASE_URI — уже в create_app

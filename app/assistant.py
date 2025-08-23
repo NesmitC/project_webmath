@@ -9,6 +9,10 @@ from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
+from flask import Blueprint, jsonify, request
+
+
+bp = Blueprint('assistant', __name__)
 
 # --- Настройки ---
 HF_CACHE_DIR = os.path.join("models", "embeddings")
@@ -141,13 +145,40 @@ def deepseek_complete(prompt: str) -> str:
     except Exception as e:
         return f"Ошибка при обращении к DeepSeek: {str(e)}"
 
-# --- ОСНОВНАЯ ФУНКЦИЯ ---
-def ask_teacher(question: str):
-    question = question.strip()
-    if not question:
-        return "Пожалуйста, задайте вопрос."
+# --- Триггеры для нейрокуратора ---
+KURATOR_TRIGGERS = [
+    r'\b(оценк[аи]|уровен[ья]|готовн[оасть]|подготовк[аи]|экзамен|еэкзамен|егэ|огэ)\b.*\b(готов|проверь|оценить|узнать|как мне|как сдать)\b',
+    r'\b(проверь мо[иё] знан[ия])\b',
+    r'\b(как мне подготовиться)\b',
+    r'\b(входящая диагностика|диагностика)\b',
+    r'\b(насколько я готов)\b',
+    r'\b(что делать дальше)\b'
+]
 
-    # 1. Проверка сложных случаев
+def is_kurator_query(question):
+    question = question.lower().strip()
+    for pattern in KURATOR_TRIGGERS:
+        if re.search(pattern, question):
+            return True
+    return False
+
+
+# --- ОСНОВНОЙ МАРШРУТ /ask ---
+@bp.route('/ask', methods=['POST'])
+def ask():
+    data = request.get_json()
+    question = data.get('question', '').strip()
+
+    if not question:
+        return jsonify({"answer": "Пожалуйста, задайте вопрос."})
+
+    # 1. Проверка: не запрос ли это к нейрокуратору?
+    if is_kurator_query(question):
+        user_is_authenticated = data.get('is_authenticated', False)
+        response = generate_kurator_response(user_is_authenticated)
+        return jsonify(response)
+
+    # 2. Проверка сложных случаев
     q_lower = question.lower()
     for trigger in _hard_cases:
         if trigger in q_lower:
@@ -155,16 +186,16 @@ def ask_teacher(question: str):
             answer = case["answer"]
             if case["rule"]:
                 answer += f" Правило: {case['rule']}"
-            return answer
+            return jsonify({"answer": answer, "role": "neuro_teacher"})
 
-    # 2. Поиск в базе знаний
+    # 3. Поиск в базе знаний (FAISS + DeepSeek)
     try:
         retriever = get_retriever()
         relevant_docs = retriever.get_relevant_documents(question)
 
         if not relevant_docs:
-            return "Ваш вопрос будет передан методической службе."
-        
+            return jsonify({"answer": "Ваш вопрос будет передан методической службе.", "role": "neuro_teacher"})
+
         context = "\n\n".join([doc.page_content for doc in relevant_docs])
 
         prompt = f"""
@@ -173,15 +204,12 @@ def ask_teacher(question: str):
 
 Правила:
 1. Отвечай на русском языке.
-2. Будь доброжелателен, на приветствия дружелюбно здоровайся, потом предлагай помощь,
-не комментируй свои ответы предложениями в скобках. Будь краток.
-3. Если пользователь использует неэтичные выражения, мат, твердо скажи о недопустимости такого речевого поведения,
-это делает человека убогим, неполноценным.
+2. Будь доброжелателен, на приветствия дружелюбно здоровайся, потом предлагай помощь.
+3. Если пользователь использует неэтичные выражения, мат, твердо скажи о недопустимости такого речевого поведения.
 4. Ответ — 1–2 предложения, сначала ответ, потом КРАТКОЕ правило или причина.
-5. Не упоминай "раздел", "чанк", "заголовок".
-6. Если вопрос с ошибкой — ответь: «Правильно: ...» и объясни почему.
-7. Если вопрос неясен — попроси уточнить.
-8. Если ответа нет — скажи: «Ваш вопрос будет передан методической службе.»
+5. Если вопрос с ошибкой — ответь: «Правильно: ...» и объясни почему.
+6. Если вопрос неясен — попроси уточнить.
+7. Если ответа нет — скажи: «Ваш вопрос будет передан методической службе.»
 
 Контекст:
 {context}
@@ -190,13 +218,17 @@ def ask_teacher(question: str):
 
 Ответ:
 """
-        return deepseek_complete(prompt)
+        answer = deepseek_complete(prompt)
+        return jsonify({"answer": answer, "role": "neuro_teacher"})
+
     except Exception as e:
-        return f"Ошибка при обработке запроса: {str(e)}"
+        return jsonify({"answer": f"Ошибка при обработке запроса: {str(e)}", "role": "neuro_teacher"})
+
+# --- Импортируем нейрокуратора ПОСЛЕ определения функций ---
+from .neuro_kurator import generate_kurator_response
 
 # --- Загрузка данных при старте ---
-if __name__ == "__main__":
-    load_hard_cases()
-    print("⏳ Инициализация базы знаний при старте...")
-    get_retriever()
-    print("✅ Сервер готов к работе.")
+load_hard_cases()
+print("⏳ Инициализация базы знаний при старте...")
+get_retriever()
+print("✅ Сервер готов к работе.")

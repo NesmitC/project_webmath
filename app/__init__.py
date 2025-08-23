@@ -75,6 +75,10 @@ def create_app():
     from app.admin import admin
     app.register_blueprint(admin)
 
+    # ✅ Регистрируем assistant Blueprint
+    from app.assistant import bp as assistant_bp
+    app.register_blueprint(assistant_bp, url_prefix='/assistant') # 👉 Теперь маршрут будет: /assistant/ask
+
     # ✅ Создаём папку и таблицы
     with app.app_context():
         instance_dir = os.path.join(basedir, 'instance')

@@ -212,3 +212,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // === Инициализация высоты при загрузке ===
     onChatUpdate();
 });
+
+// =============================================
+// Определим, авторизован ли пользователь
+// Вариант 1: через глобальную переменную из шаблона
+const isUserAuthenticated = window.currentUser?.isAuthenticated || false;
+
+// Вариант 2: если нет — можно не передавать, но лучше передать
+fetch('/assistant/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        question: userInput.value.trim(),
+        is_authenticated: window.currentUser?.isAuthenticated || false
+    })
+})
